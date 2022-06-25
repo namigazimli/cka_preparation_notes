@@ -1,0 +1,55 @@
+Daemon Sets are like ReplicaSets, as in it helps you deploy multiple instances of pods, but it runs 
+one copy of your pod on each node in your cluster. Whenever a new node is added to the cluster, a
+replica of the pod is automatically added to that node. And when node is removed, the pod is 
+automatically removed. The DaemonSet ensures that one copy of the pod is always present in all nodes
+in the cluster. 
+
+USE CASE
+--------
+
+Let's say you would like to deploy a monitoring agent or log collector on each of your nodes in the cluster.
+So, you can monitor your cluster better. A DaemonSet is perfect for that as it can deploy your monitoring 
+agent in the form of a pod in all the nodes in your cluster. Then you don't have to worry about adding or 
+removing monitoring agents from these nodes where are changes in your cluster. As the DaemonSet will take 
+care of that for you. 
+The kube-proxy component can be deployed as a DaemonSet in the cluster. Another use case is for networking.
+Networking solutions like weave-net requires an agent to be deployed on each node in the cluster.
+
+Creating a DaemonSet is similar to the ReplicaSet creation process. It has nested pod specification under the
+template section and selectors to link the DaemonSet to the pods. A DaemonSet definition file has a similar 
+structure. 
+
+----------------------------------------
+daemon-set-definition.yaml             |
+----------------------------------------
+apiVersion: v1                         |
+kind: DaemonSet                        |
+metadata:                              |
+  name: monitoring-daemon              |
+spec:                                  |
+  selector:                            |
+    matchLabels:                       |
+      app: monitoring-agent            |
+  template:                            |
+    metadata:                          |
+      labels:                          |
+        app: monitoring-agent          |
+    spec:                              |
+      containers:                      |
+        - name: monitoring-agent       |
+          image: monitoring-agent      |
+----------------------------------------
+
+Once ready, create the DaemonSet using the kubectl command:
+
+--> kubectl create -f daemon-set-definition.yaml
+
+To view the created DaemonSet, run the following command:
+
+--> kubectl get daemonsets
+
+And, of course, to view more detailes use the following command:
+
+--> kubectl describe daemonset <daemonset-name>
+
+From Kubernetes v1.12 the DaemonSet uses the default scheduler and Node Affinity rules to schedule pods on nodes.

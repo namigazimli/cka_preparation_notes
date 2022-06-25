@@ -1,0 +1,5 @@
+Now that we have created our personal access token, we need to run the following command:
+
+git remote set-url origin https://<githubtoken>@github.com/<username>/<repositoryname>.git
+
+cka_notes token : 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

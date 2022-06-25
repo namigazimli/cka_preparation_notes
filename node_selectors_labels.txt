@@ -1,0 +1,36 @@
+Suppose that we have 3 different nodes in the cluster. One of them has larger resources than another ones. However, in the current
+default setup, any pods can go to any nodes. To solve this, we can set a limitation on the pods, so that they only run on particular
+nodes. There are two ways to do this. The first is using NodeSelectors which is the simple and easier way. For this we look at the 
+pod definition file we created earlier. This file has a simple definition to create a pod with a data processing image. To limit this
+pod to run on the larger node we add a new property called "nodeSelector" to the spec section and specify the size as large.
+
+------------------------------
+pod-definition.yaml          |
+------------------------------
+apiVersion: v1               |
+kind: Pod                    |
+metadata:                    |
+  name: myapp-pod            |
+spec:                        |
+  containers:                |
+    - name: data-processor   |
+      image: data-processor  |
+  nodeSelector:              |
+    size: Large              |
+                             |
+------------------------------
+
+Where the "size: Large" come from and how does Kubernetes know which is the large node. The key-value pair of size and large are in fact
+labels assigned to the nodes. The Scheduler uses these labels to match and identify the right node to place the pods on. To use labels in
+a known selector like this, you must have first labelled your nodes prior to creating this pod. To label a node use the command kubectl
+label.
+
+--> kubectl label nodes <node-name> <label-key>=<label-value>
+In this case we have to use following command:
+--> kubectl label nodes Node01 size=Large
+
+Now that we have labelled the node. So we can create a pod with pod definition file as follows:
+
+--> kubectl create -f pod-definition.yaml
+
+For more complex selectors we cannot use nodeSelectors. In that case we must use Node Affinity and Anti Affinity feautures.

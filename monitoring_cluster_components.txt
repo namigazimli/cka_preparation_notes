@@ -1,0 +1,25 @@
+Note that the Metrics server (monitoring solution) is only an in memory monitoring solution and does not
+store the metrics on the disk. As a result you cannot see historical performance data. For that you must
+rely on one of the advanced monitoring solutions(elasticsearch and others). So how are the metrics 
+generated for the PODs on these nodes? Kubernetes runs an agent on each node known as the kubelet, which
+is responsible for receiving instructions from the Kubernetes API master server and running Pods on the
+nodes. The kubelet also contains a subcomponent known as cAdvisor or container Advisor. cAdvisor is 
+responsible for retrieving performance metrics from pods, and exposing them through the kubelet API to
+make the metrics available for the Metrics server. For single-node cluster use the minikube command:
+
+--> minikube addons enable metrics-server
+
+For all other environments deploy the Metrics server by cloning the metrics-server deployment files from
+the github repository. And then deploying the required components using the kubectl create command.
+
+--> git clone https://github.com/kubernetes-incubator/metrics-server.git
+--> kubectl create -f deploy/1.8+/
+
+This command deploys a set of pods, services and roles to enable Metrics server to pull for performance 
+metrics from the nodes in the cluster. Once deployed, give the Metrics server some time to collect and
+process data. Once processed, cluster performance can be viewed by running the "kubectl top node" command.
+This provides the CPU and Memory consumptions of each of the nodes. Use the "kubectl top pod" command
+to view performance metrics of pods in Kubernetes.
+
+--> kubectl top node
+--> kubectl top pod

@@ -1,0 +1,20 @@
+To limit resources in namespace, we have to create a resource quota. To create one, start wih a definition file for resource quota,
+specify the namespace for which you want to create quota and then under spec provide your limits:
+
+compute-quota.yaml
+-----------------------
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: compute-quota
+  namespace: dev
+spec:
+  hard:
+    pods: "10"
+    requests.cpu: "4"
+    requests.memory: 5Gi
+    limits.cpu: "10"
+    limits.memory: 10Gi
+------------------------
+
+kubectl create -f compute-quota.yaml

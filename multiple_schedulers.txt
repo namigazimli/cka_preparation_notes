@@ -1,0 +1,89 @@
+You can write your own Kubernetes scheduler program, package it and deploy it as
+the default scheduler or as an additional scheduler in the Kubernetes cluster. 
+That way all of the other applications can go through the default scheduler, however
+one specific application can use your custom scheduler. Your kubernetes cluster can 
+have multiple schedulers at the same time. When creating a POD or a Deployment you 
+can instruct Kubernetes to have the POD scheduled by a specific scheduler. To deploy 
+an additional scheduler, you may use the same kube-scheduler binary or use one that 
+you might have built for yourself, which makes more sense. The kubeadm tool deploys
+the scheduler as a POD. You can the definition file it uses under the manifests folder.
+
+----------------------------------------------------
+/etc/kubernetes/manifests/kube-scheduler.yaml      |
+----------------------------------------------------
+apiVersion: v1                                     |
+kind: Pod                                          |
+metadata:                                          |
+  name: kube-scheduler                             |
+  namespace: kube-system                           |
+spec:                                              |
+  containers:                                      |
+  - command:                                       |
+    - kube-scheduler                               |
+    - --address=127.0.0.1                          |
+    - --kubeconfig=/etc/kubernetes/scheduler.conf  |
+    - --leader-elect=true                          |
+    image: k8s.gcr.io/kube-scheduler-amd64:v1.11.3 |
+    name: kube-scheduler                           |
+----------------------------------------------------
+
+We can create a custom scheduler by making copy of the same file, and by changing the name of
+the scheduler. We set the name of the pod to my-custom-scheduler and we add a new option to 
+the scheduler command.
+
+----------------------------------------------------
+my-custom-scheduler.yaml                           |
+----------------------------------------------------
+apiVersion: v1                                     |
+kind: Pod                                          |
+metadata:                                          |
+  name: my-custom-scheduler                        |
+  namespace: kube-system                           |
+spec:                                              |
+  containers:                                      |
+  - command:                                       |
+    - kube-scheduler                               |
+    - --address=127.0.0.1                          |
+    - --kubeconfig=/etc/kubernetes/scheduler.conf  |
+    - --leader-elect=true                          |
+    - --scheduler-name=my-custom-scheduler         |
+    - --lock-object-name=my-custom-scheduler       |
+    image: k8s.gcr.io/kube-scheduler-amd64:v1.11.3 |
+    name: kube-scheduler                           |
+----------------------------------------------------
+The --leader-elect option is used when you have multiple copies of the scheduler running on different
+master nodes in a high availability setup where you have multiple master nodes with the kube-scheduler
+process running on both of them. If multiple copies of the same scheduler are running on different
+nodes, only one can be active at a time. That's where the --leader-elect option helps in choosing a 
+leader who will lead scheduling activities. But for now, to get multiple schedulers working you must
+either set the --leader-elect option to false, in case where you don't have multiple masters. In case
+you do have multiple masters, you can pass in an additional parameter to set a lock object name. This
+is to differenciate the new custom scheduler from the default during the leader election process.
+
+Once done, create the pod using the kubectl create command:
+
+--> kubectl create -f my-custom-scheduler.yaml
+
+The next step is to configure a new Pod or a deployment to use the new scheduler. In the pod definition 
+file add a new field called "schedulerName" and specify the name of the new scheduler. This way when the
+pod is created, the right scheduler picks it up to schedule. 
+
+------------------------------------------
+pod-definition.yaml                      |
+------------------------------------------
+apiVersion: v1                           |
+kind: Pod                                |
+metadata:                                |
+  name: nginx-pod-with-custom-schdlr     |
+spec:                                    |
+  containers:                            |
+    - name: nginx                        |
+      image: nginx                       |
+  schedulerName: my-custom-scheduler     |
+------------------------------------------
+
+So how do you know which scheduler picket it up? View the events using the "kubectl get events" command. This
+lists all the events in the current namespace. To view the logs of the scheduler, view the logs of the pod
+using the kubectl logs command. 
+
+--> kubectl logs my-custom-scheduler -n kube-system

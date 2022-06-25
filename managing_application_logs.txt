@@ -1,0 +1,50 @@
+We create a pod with the event simulator Docker image using the pod definition file.
+
+----------------------------------------
+event-simulator.yaml                   |
+----------------------------------------
+apiVersion: v1                         |
+kind: Pod                              |
+metadata:                              |
+  name: event-simulator-pod            |
+spec:                                  |
+  containers:                          |
+    - name: event-simulator            |
+      image: kodekloud/event-simulator |
+----------------------------------------
+
+--> kubectl create -f event-simulator.yaml
+
+Once it's the pod is running, we can view the logs using the "kubectl logs" command 
+with the pod name.
+
+--> kubectl logs -f event-simulator-pod
+
+Use the -f option to stream the logs live. Now these logs are specific to the container
+running inside the pod. We know that Kubernetes Pods can have multiple containers in them.
+In this case we modify the pod definition file to include an additional container called
+image-processor.
+
+----------------------------------------
+event-simulator.yaml                   |
+----------------------------------------
+apiVersion: v1                         |
+kind: Pod                              |
+metadata:                              |
+  name: event-simulator-pod            |
+spec:                                  |
+  containers:                          |
+    - name: event-simulator            |
+      image: kodekloud/event-simulator |
+    - name: image-processor            |           
+      image: some-image-processor      |
+----------------------------------------
+
+If we ran kubectl logs command again, which container's log would it show? If there are multiple 
+containers within a pod, you must specify the name of the container explicitly in the command.
+Otherwise it would fail asking you to specify a name. In this case we will specify the name of
+the first container "event-simulator" and that prints the relevant log messages.
+
+--> kubectl logs -f event-simulator-pod event-simulator
+
+Now that is the simple logging functionality implemented within Kubernetes. 

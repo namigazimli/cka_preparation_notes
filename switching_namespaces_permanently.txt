@@ -1,0 +1,4 @@
+When we need to switch from one namespace to another namespace permanently, we have to use following command:
+kubectl config set-context $(kubectl config current-context) --namespace=pod
+
+In this example, we switch namespace from default named "pod" namespace.

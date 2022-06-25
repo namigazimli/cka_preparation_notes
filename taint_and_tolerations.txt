@@ -1,0 +1,31 @@
+To create taint for a node, use the following command:
+
+--> kubectl taint node <node-name> <key>=<value>:<Effect>
+For example,
+--> kubectl taint node slave01 spray=mortein:NoSchedule
+
+Create pod named bee with the nginx image, which has tolerate set to the taint mortein.
+
+--> kubectl run bee --image=nginx --dry-run=client -o yaml > bee.yaml
+
+-----------------------------------
+bee.yaml                          |
+-----------------------------------
+apiVersion: v1                    |
+kind: Pod                         |
+metadata:                         |
+  name: bee                       |
+  labels:                         |
+    run: bee                      |
+spec:                             |
+  containers:                     |
+    - name: bee                   |
+      image: nginx                |
+  tolerations:                    |
+  - key: spray                    |
+    value: mortein                |
+    operator: Equal               |
+    effect: NoSchedule            |
+-----------------------------------
+
+--> kubectl create -f bee.yaml
