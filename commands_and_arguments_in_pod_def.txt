@@ -1,0 +1,55 @@
+Suppose that, we have created Docker image with following Dockerfile:
+
+------------------------
+Dockerfile             |
+------------------------
+FROM ubuntu            |
+ENTRYPOINT ["sleep"]   |
+CMD ["5"]              |
+------------------------
+
+--> docker build -t ubuntu-sleeper . 
+
+And we create pod with pod definition file based on Docker image.
+
+-----------------------------------
+pod-definition.yaml               |
+-----------------------------------
+apiVersion: v1                    |
+kind: Pod                         |
+metadata:                         |
+  name: ubuntu-sleeper-pod        |
+spec:                             |
+  containers:                     |
+    - name: ubuntu-sleeper        |
+      image: ubuntu-sleeper       |
+      args: ["10"]                |
+-----------------------------------
+
+--> kubectl create -f pod-definition.yaml
+
+The Dockerfile has an ENTRYPOINT as well as a CMD instruction specified. The ENTRYPOINT is the
+command that is run at startup, and the CMD is the default parameter passed to the command.
+With the "args" option in the pod definition file we override the CMD instruction in the Dockerfile.
+But what if you need to override the ENTRYPOINT? For example, from sleep to sleep2.0 command. In
+the Docker world, we would run the "docker run" command with the --entrypoint option set to the
+new command. The corresponding entry in the pod definition file would be using a "command" field.
+The "command" field corresponds to ENTRYPOINT instruction in the Dockerfile. So, to summarize 
+there are two fields that correspond to two instructions in the Dockerfile. The "command" field
+overrides the ENTRYPOINT instruction and the "args" field overrides the CMD instruction in the
+Dockerfile. 
+
+-----------------------------------
+pod-definition-v2.yaml            |
+-----------------------------------
+apiVersion: v1                    |
+kind: Pod                         |
+metadata:                         |
+  name: ubuntu-sleeper-pod        |
+spec:                             |
+  containers:                     |
+    - name: ubuntu-sleeper        |
+      image: ubuntu-sleeper       |
+      command: ["sleep2.0"]       |
+      args: ["10"]                |
+----------------------------------- 
