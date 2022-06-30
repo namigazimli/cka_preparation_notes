@@ -1,0 +1,104 @@
+Is it mandatory all of Kubernetes control plane components (kube-apiserver, controller-manager, kubelet,
+kube-scheduler, kube-proxy and kubectl) to have the same version? No, the components can be at different
+release versions. Since the kube-apiserver is the primary component in the control plane and that is the
+component that all other components talk to. None of the other components should ever be at a version 
+higher than the kube-apiserver. The controller-manager and kube-scheduler can be at 1 version lower, so if
+kube-apiserver was at X version, controller-managers and kube-schedulers can be at X-1, kubelet and
+kube-proxy components can be at 2 versions lower (X-2). So if kube-apiserver was at 1.10, the controller-
+manager and kube-scheduler could be at 1.10 or 1.9, and the kubelet and kube-proxy could be at 1.8 or 1.9
+or 1.10. None of them could be at version higher than the kube-apiserver, like 1.11. This is not the case
+with the kubectl. The kubectl utility could be at 1.11, a version higher than the kube-apiserver.
+
+Now this permissible skew in versions allows us to carry out live upgrades. We can upgrade component by
+component if required. So, when should you upgrade? So you were at 1.10 and Kubernetes releases versions
+1.11 and 1.12 at any time. Kubernetes supports only up to the recent 3 minor versions. So with 1.12 being
+the latest release, Kubernetes supports versions 1.12, 1.11, and 1.10. So when 1.13 is released, only 
+versions 1.13, 1.12 and 1.11 are supported. Before the release of 1.13, would be a good time to upgrade
+your cluster to the next release. 
+
+So how do we upgrade? Do we upgrade directly from 1.10 to 1.13? No, the recommended approach is to upgrade
+one minor version at a time (1.10->1.11 and 1.11->1.12 and etc). The upgrade process depends on how your
+cluster is set up. If you deploy your cluster using tools like kubeadm, then the tool can help you plan 
+and upgrade the cluster. 
+
+--> kubeadm upgrade plan
+--> kubeadm upgrade apply
+
+If you deploy your cluster from scratch, then you manually upgrade the different components of the cluster 
+yourself. 
+
+So, you have a cluster with master and worker nodes running in production, hosting pods, serving users. 
+The nodes and components are at version 1.10. Upgrading a cluster involves two major steps. First, you 
+upgrade your master nodes and then upgrade to worker nodes. While the master is being upgraded the control
+plane components such as kube-apiserver, kube-scheduler and controller-managers go down briefly. The master
+going down does not mean your worker nodes and applications on the cluster are impacted. All workloads on
+the worker nodes continue to serve users as normal. Since the master is down, all management functions are
+down. You cannot access the cluster using the kubectl or other kube-apiserver. You cannot deploy new apps, 
+or delete or modify existing ones. The controller-manager don't function either. If a pod was to fail, a new
+pod won't be created automatically. But as long as the nodes and the pods are up, your apps should be up and
+users will not be impacted. Once the upgrade is complete and the cluster is back up, it should function
+normally. We now have the master and the master components at version 1.11 and the worker nodes at version 1.10.
+This is a supported configuration. 
+
+It is now time to upgrade the worker nodes. There are different strategies available to upgrade the worker nodes. 
+One is to upgrade all of them at once, but then your pods are down and users are no longer able to access the apps.
+Once the upgrade is complete, the nodes are back up. New pods are scheduled and users can resume access. That's one
+strategy that requires downtime. The second strategy is to upgrade one by one. We first upgrade the first node
+where the workloads move to the second and third nodes and users are served from there. Once the first node is upgraded
+and back up, we then update the second node where the workloads move to the first and third node. And finally, the
+third node where the workloads are shared between the first two. Until we have all nodes upgraded to a newer version,
+we then follow the same procedure to upgrade the nodes from 1.11 to 1.12 and then 1.13. 
+
+A third strategy would be to add new nodes to the cluster nodes with newer software version. This is especially 
+convenient if you're on a cloud environment where you can easily provision new nodes and decommission old ones. 
+Nodes with the newer software version can be added to the cluster, move the workload over to the new and remove the old
+node. Until you finally have all new nodes with the new software version.
+
+Kubeadm has an upgrade command that helps in upgrading clusters with the "kubeadm upgrade plan" and it will give you a
+lot of good information. The current cluster version, the kubeadm tool version, the latest stable version of Kubernetes.
+Then it lists all the control plane components and their versions and what version these can be upgraded to. It also 
+tells you that after we upgrade the control plane components, you must manually upgrade the kubelet versions on each node.
+Remember, kubeadm does not install or upgrade the kubelet. Finally, it gives you the command to upgrade the cluster. 
+Also note that you must upgrade the kubeadm tool itself, before you can upgrade the cluster. The kubeadm tool also follows
+the same software version as Kubernetes. 
+
+For example, we have version 1.11 and want to upgrade version 1.13. Firstly, we upgrade the kubeadm tool:
+
+--> apt-get upgrade -y kubeadm=1.12.0-00
+
+Then we apply second command:
+
+--> kubeadm upgrade apply v1.12.0
+
+After the upgrade if we check the master version by the "kubectl get nodes" command we can see the version is still in old version.
+So the next step we must upgrade the kubelet on the master node.
+
+--> apt-get upgrade -y kubelet=1.12.0-00
+--> systemctl restart kubelet
+
+After restarting kubelet if we check version again, we can see the newer version is displayed on the "kubectl get nodes" command.
+
+So next, the worker nodes must be upgraded. Let's start with first node. We need to first move the workload from the first worker
+node to the other nodes. The "kubectl drain" command lets you safely terminate all the pods from a node and reshedule them on the
+other nodes.
+
+--> kubectl drain node01
+
+It also cordons the node and marks it unschedulable. That way, no new pods are scheduled on it. Then upgrade the kubeadm and kubelet 
+packages on the worker nodes, as we did on the master node.
+
+--> apt-get upgrade -y kubeadm=1.12.0-00
+--> apt-get upgrade -y kubelet=1.12.0-00
+
+Then the kubeadm upgrade command update the node configuration for the new kubelet version.
+
+--> kubeadm upgrade node
+--> systemctl restart kubelet
+
+However, when we drain the node, we actually marked it unschedulable. So we need to unmask it by running the command "kubectl uncordon"
+command.
+
+--> kubectl uncordon node01
+
+The node is now schedulable, but remember that it is not necessary that the pods come right back to this node. 
+It will soon come when we take down the second node to perform the same steps to upgrade it.
