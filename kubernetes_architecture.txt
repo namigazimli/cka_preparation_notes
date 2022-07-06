@@ -1,0 +1,58 @@
+At a high level, Kubernetes is a cluster of nodes that run containerised applications. It
+runs a number of controllers that implement features such as self-healing and automated
+releases.
+
+There are two types of nodes in a Kubernetes cluster.
+• Control plane nodes
+• Worker nodes
+
+Both can be virtual machines, physical servers, or cloud instances, and you can mix-andmatch
+different types in the same cluster.Control plane nodes are the brains of Kubernetes. They run 
+the API server, the scheduler,and the cluster store. They also run the controllers that implement 
+the intelligence. Worker nodes are where user applications run. Every worker node has a kubelet 
+and a container runtime. The kubelet talks to the control plane and tells the container runtime
+when to start and stop containers. The Kubernetes command line utility is called kubectl.
+
+The Kubernetes control plane is a collection of specialised independent services that run on every 
+control plane node. These implement the intelligence that makes Kubernetes so special. As the control 
+plane is a vital part of every Kubernetes cluster, it needs to be high performance and highly available. 
+In the real world, production Kubernetes clusters normally run 3 or 5 control plane nodes spread across 
+multiple failure domains. This means failure of a control plane node, or any of the supporting infrastructure, 
+won’t take the entire control plane down. You should also ensure control plane nodes are connected by 
+low-latency reliable networks. It’s important that you run an odd number of control plane nodes, and running
+1 is better than running 2. This is because an even number has more chance of resulting in a split-brain 
+scenario where a network failure occurs and there are an equal number of control plane nodes on either side of 
+the network failure. If this happens, neither side can be sure they have a majority. If the control plane ever 
+does go down, applications that are already running will continue to work but you won’t be able to make any 
+changes or updates. The major control plane services include all of the following, and they all run on every
+control plane node.
+
+• The API server
+• The scheduler
+• The cluster store
+• Controllers
+
+The API server is the main gateway in and out of Kubernetes. When you send commands to Kubernetes, you send them 
+to the API server. When you query the state of something, you send the query to the API server. Also, the kubelet 
+on every worker node watches the API server for new work assignments and reports status back to the API server.
+Basically, everything in Kubernetes goes through the API server. This requires highperformance control plane nodes 
+so the API server can respond to requests quickly.
+
+The scheduler is responsible for deciding which worker nodes to run pods on. It can schedule pods to nodes with enough 
+CPU and memory, it can distribute them across availability zones, and it can even target them to particular nodes or 
+keep them away from particular nodes.
+
+The cluster store is where the state of the cluster is stored and is the only stateful component of the entire control 
+plane. This means it’s the only component that creates and stores important cluster-related data that must not be lost. 
+For example, if you deploy an application that requires 5 instances of a particular pod, this will be stored in the 
+cluster store and used by controllers and other components as a reference. The cluster store is based on the etcd 
+distributed database.
+
+Controllers watch the current state of the cluster and take actions to ensure it’s always in sync with desired state. 
+Again, as a simple example, you might request 5 pods running a web server container – this is desired state. If something 
+fails and drops the number of pods down to 3, a controller observes the change and starts 2 new pods to bring observed 
+state back into sync with desired state.
+
+As a quick recap, the control plane runs critical services and needs to be highly available. For most scenarios you should 
+run 3 control plane nodes and spread them across different availability zones so that local failures don’t impact all three. 
+You should also ensure control plane nodes are high-performance so that requests to the API server aren’t slow.

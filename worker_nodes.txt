@@ -1,0 +1,30 @@
+Worker nodes are where user applications run. They can by physical servers, virtual
+machines, or cloud instances, and a single Kubernetes cluster can run a mix of any.
+All workers run three important services:
+
+• Kubelet
+• Container runtime
+• Kube-proxy
+
+The kubelet is the main Kubernetes agent on the node. It watches the API server for
+new work assignments, tells the container runtime which containers to start and stop,
+and reports status info back to the API server. It also does other things such as making
+container logs available to the kubectl logs command.
+
+Older Kubernetes clusters used Docker as their container runtime. However, that layer is 
+now pluggable, meaning cluster administrators can choose the best container runtime for 
+their requirements. At the time of writing, most new Kubernetes clusters use containerd 
+(pronounced “container dee”) as their container runtime but many others exist. In fact, 
+a single cluster can run different runtimes on different worker nodes.
+
+The technology making the container runtime layer pluggable in Kubernetes is the Container 
+Runtime Interface (CRI). The following list is some of the more common container runtimes.
+
+• Containerd (popular on new clusters)
+• CRI-O (default on RedHat OpenShift clusters)
+• gVisor (provides additional isolation between container and host OS)
+• Kata containers (runs every container in a lightweight VM)
+• Docker (the original, but deprecated since K8s 1.20)
+
+The final piece of the worker node is the kube-proxy. This implements networking so that 
+traffic can successfully reach pods.
