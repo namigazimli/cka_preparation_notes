@@ -1,0 +1,23 @@
+Kubernetes is a container orchestrator originally developed at Google and open-sourced and donated to the CNCF in 2014. 
+It was the first project to graduate the CNCF and is now the industry-standard orchestrator and second biggest project on GitHub. 
+It can also orchestrate virtual machines and serverless functions. A Kubernetes cluster consists of one or more control plane 
+nodes and one or more worker nodes. Control plane nodes run the API server, cluster store, scheduler, controllers, and the API itself. 
+Worker nodes are where user applications run and have a kubelet, container runtime, and kube-proxy. The API server exposes the API over 
+a RESTful HTTPS interface and requires highperformance control plane nodes. All internal and external Kubernetes traffic goes through 
+the API server. The cluster store is the only stateful part of the control plane and is where the state of the cluster and applications 
+is persisted. The scheduler assigns pods to worker nodes, and controllers ensure the observed state of the cluster always matches 
+desired state. Every worker node runs a kubelet that watches the API server for new work and tells the container runtime which containers 
+to start and stop. The kube-proxy implements networking rules to ensure traffic to Kubernetes services reaches the right pods and containers.
+Namespaces are a great way to divide a single cluster into virtual clusters for sharing between different teams and departments. Every namespace 
+can have its own resource quotas and user accounts, but you shouldn’t use them as workload boundaries. Finally, Kubernetes uses 3rd party plugins 
+to implement an open flat pod network that you should lock down with network policies.
+
+Pods are the atomic unit of scheduling on Kubernetes. Developers write applications, package them as containers, and then wrap those containers 
+in pods to run on Kubernetes. A Pod can wrap one or more containers, and all containers in a pod are guaranteed to be scheduled on the same node. 
+The pod also acts as a shared execution environment for containers. This means two containers in the same pod have access to the same volumes and 
+networking. If you want to scale an app, you add more pods.
+
+The multi-container pod model usually has a main application container and a helper container. The helper container is called a sidecar and has 
+enabled powerful patterns and innovations. For example, service mesh technologies work by injecting a sidecar container into the same pod as 
+applications containers. The sidecar can intercept all network traffic and transparently encrypt and decrypt it. It can also expose rich network 
+telemetry that can be used to better understand and optimize traffic flow. Many other solutions use sidecars.

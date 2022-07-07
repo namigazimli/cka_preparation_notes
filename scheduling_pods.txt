@@ -1,0 +1,26 @@
+Kubernetes has a built-in scheduler that runs as part of the control plane. It uses advanced logic to schedule pods to the right worker nodes.
+Scheduling starts when Kubernetes is asked to run a new pod. This might be you sending a new manifest file to the API server that asks for a 
+new pod, it might be the result of an autoscaling event, or it might even be a self-healing action replacing a failed pod. Either way, as soon 
+as a new pod is requested, it goes into the pending state while the scheduler picks the best node to run it. As soon as a node is identified the
+pod is scheduled. However, if the scheduler can’t find a suitable node, the pod will stay pending.
+
+Consider the following example. You’re running a Kubernetes cluster with 6 worker nodes and all of your pods have been configured with resource 
+requests and resource limits – resource requests tell the scheduler the minimum amount of CPU and memory a container needs in order to run, 
+whereas resource limits set maximums. Assume you’re scheduling two new pods and each one requires 2GB of memory and 2 CPU cores. If the scheduler 
+can’t find a worker node with enough resources, they’ll go into the pending state until a suitable node becomes available. As soon as a suitable node
+becomes available they’ll be scheduled. The scheduler can also do advanced things such as:
+
+• Affinity and anti-affinity
+• Pod topology spread constraints
+• Match workloads with container runtimes
+• Schedule work to nodes with the right storage
+
+Affinity rules let you schedule pods onto particular nodes, or nodes that are running particular pods. Anti-affinity does the opposite – it lets you 
+tell the scheduler not to run pods on particular nodes, or nodes already running particular pods. Think of affinity and anti-affinity rules as being 
+like magnets that can either attract or repel pods from particular nodes – affinity rules attract pods to particular nodes, whereas anti-affinity
+rules repel pods from particular nodes.
+
+Pod topology spread constraints let you balance pods across user-defined failure domains. They’re an important tool for achieving application high availability.
+
+The scheduler can also target pods at nodes with specific container runtimes. For example, you can tell Kubernetes that certain workloads should only run on nodes
+with the gVisor runtime. It can also schedule containers to nodes with access to certain storage volumes.

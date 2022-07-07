@@ -1,0 +1,13 @@
+Kubernetes namespaces are a way to divide a single Kubernetes cluster into virtual clusters called namespaces.
+Each namespace can have its own set of resource quotas and user accounts. This makes them a good way to share 
+clusters among different teams or environments. For example, you might use namespaces to divide a single cluster 
+into dev, test, and qa namespaces. However, you shouldn’t use namespaces as a workload boundary to try and 
+isolate hostile or potentially dangerous workloads. For example, namespaces cannot prevent a compromised container 
+in one namespace from affecting containers in other namespaces. For example, a compromised container in the Pepsi 
+namespace can easily take down containers in the Coke namespace. Currently, the only way to guarantee one workload 
+won’t impact another is to put them on separate clusters.
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dev

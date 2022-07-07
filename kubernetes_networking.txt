@@ -1,0 +1,56 @@
+In this section we’ll cover the following network-related topics:
+
+• Kubernetes services
+• The pod network
+• Service registration and discovery
+
+Kubernetes services.
+You already know that pods are typically deployed via higher-level controllers like the deployment controller 
+and the statefulset controller. These implement cloud native features such as self-healing, autoscaling, rollouts, 
+and rollbacks. These features make individual pods extremely unreliable. Consider the following examples.
+
+Every time a node or pod fails, the missing pod is replaced with a new pod with a new IP address. If a client was 
+connecting directly to the failed pod, future connections will time-out and won’t re-establish to the new pod. Scale-up 
+events add new pods with new IP addresses, whereas scale-down events remove pods. Again, clients connected to a pod that 
+is removed as part of a scale-down operation will lose their connection. Finally, rolling out a new version of an app 
+removes all existing pods and replaces them new ones with new IP addresses.
+
+All of this makes pods unreliable and other apps should never connect directly to pods. To resolve this issue, Kubernetes 
+provides a "Service" object that sits in front of pods and provides them with reliable networking. For example, you define 
+a service object and tell it to redirect traffic to all pods with a particular label. The service gets a stable name and 
+IP address that Kubernetes guarantees will never change. Clients connect to the service, and the service redirects the traffic 
+to the pods. The service is also intelligent enough to know when pods are added or removed, so it guarantees to always loadbalance
+the traffic to the latest set of running pods.
+
+The pod network.
+Every Kubernetes cluster implements a network called the pod network that all pods run on. It’s a large, flat, open network, 
+meaning all pods can communicate with all other pods. This makes deployment easy but is a major security risk. As a result, 
+you should implement Kubernetes network policies to control pod-to-pod communication. Behind the scenes, it’s actually a network 
+plugin that implements the pod network. Kubernetes uses the Container Network Interface (CNI) to expose a pluggable network
+layer, and 3rd parties create CRI plugins that actually implement the pod network. This has resulted in a lot of innovation and a 
+strong Kubernetes networking ecosystem. Some of the more well-known CRI plugins include:
+
+• Cilium
+• Canal
+• Flannel
+• Weave
+
+Cilium is open-source, based on eBPF, and it’s currently the most popular CRI plugin for Kubernetes.
+
+Service registration and discovery.
+Kubernetes also implements native service registration and service discovery based on DNS. Service registration is the act of registering 
+the name and IP of new services with DNS, whereas service discovery is the act of using a service name to learn its IP address.
+Clarification. When saying “the name and IP of new services gets registered with DNS” we mean the name and IP address of Kubernetes service 
+objects that sit in front of pods. 
+
+Kubernetes service discovery operates on two core principles:
+
+1. All new services are automatically registered with DNS
+2. All pods and containers are automatically configured to use DNS for discovery
+
+To make this work, every Kubernetes cluster runs an internal DNS service called the cluster DNS. This runs as a Kubernetes-native application 
+that watches the API server for new service objects. When it sees one, it automatically registers its name and IP in the cluster DNS. This means 
+services don’t need to implement any logic to register themselves – the cluster DNS is always watching the cluster and registers all services
+automatically. Also, every container on Kubernetes is automatically configured to use the cluster DNS when it needs to discover new services. 
+This means apps running in containers don’t need to implement any special logic to find other services – the containers they’re running in do 
+all of that automatically.

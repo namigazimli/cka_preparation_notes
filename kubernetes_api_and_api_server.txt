@@ -1,0 +1,26 @@
+If you’re new to the concept of APIs, you should think of the Kubernetes API as a catalog listing every possible Kubernetes 
+object and their properties. This catalog (API) is accessed via the API server. For example, Kubernetes defines a lot of 
+objects such as pods, deployments, replicasets, statefulsets, cronjobs, services, ingresses, network policies, and more. 
+All of these are defined in the API, along with all of their properties that can be used to configure them. When you deploy 
+an object, such as a deployment, you define it in a declarative manifest that you send to the API server where it’s authenticated, 
+authorised, and scheduled to the cluster.
+
+If you try to deploy an object that isn’t defined in the API, the operation will fail. Also, if you try and configure a property of 
+an object that no longer exists, it will fail. The Kubernetes API is divided into named groups to make it easier to understand,
+navigate, and expand. For example, workload-related objects, such as deployments and statefulsets, are defined in the “apps” API group, 
+whereas storage-related objects are defined in the “storage.k8s.io” API group. New features enter the API as alpha features, progress 
+through beta, and eventually graduate to stable. We sometimes refer to stable features as generally available (GA) or v1. Stable objects 
+can also be v2, v3 etc. The following kubectl command shows a couple of the objects in the Kubernetes API. The deployments object is a 
+stable v1 object in the apps named group. CSIStorageCapacity is a beta object in the storage.k8s.io named group.
+
+--> kubectl api-resources
+
+NAME 			APIVERSION 		NAMESPACED 	KIND
+deployments 		apps/v1 		true 		Deployment
+csistoragecapacities 	storage.k8s.io/v1beta1 	true 		CSIStorageCapacity
+<Snip>
+
+Kubernetes has a deprecation policy that guarantees all stable objects will be supported for at least 12 months, or two releases (whichever 
+is longer), after deprecation. At the time of writing, a new Kubernetes version is released every 4 months, resulting in three releases per year. 
+For example, v1.21, v1.22, and v1.23 were all released in 2021. The API server exposes the API over a RESTful HTTPS endpoint. All requests to 
+the API server are subject to authentication (authN) and authorisation (authZ).

@@ -1,0 +1,50 @@
+kubectl is the Kubernetes command-line tool and is available for most platforms, including Linux, MacOS, and Windows.
+You install it on a machine, configure its config file, and use it to manage remote Kubernetes clusters. It can do 
+all of the following:
+
+• Get cluster information
+• Deploy objects such as pods and services
+• Query the state of objects
+• Read logs
+• Execute commands inside of containers
+
+It has a configuration file called "config" that’s normally located in your home folder in a hidden directory called ".kube". 
+You’ll often hear it referred to as your kubeconfig file, and it contains a list of known clusters and user credentials. 
+For example, if you have two clusters, they’ll both be listed in your kubeconfig file. As will any usernames and
+credentials required to connect to the clusters and manage them. The following are common kubectl commands:
+
+• kubectl get <object>
+• kubectl describe <object>
+• kubectl apply <filename>
+• kubectl delete <filename | object>
+• kubectl api-resources
+
+kubectl get commands return brief information about a particular resource type. For example, the following command returns info 
+about a pod called web-fe.
+
+--> kubectl get pod web-fe
+NAME 	READY 	STATUS 	RESTARTS AGE
+web-fe 	1/1 	Running 0 	 29m
+
+The following kubectl describe command returns more detailed information about the same pod.
+
+--> kubectl describe pod web-fe
+
+The preferred way to deploy objects to Kubernetes is to describe them in a YAML manifest file and deploy them with "kubectl apply" 
+or "kubectl create". The following command deploys the objects defined in a file called "web-deploy.yml".
+
+--> kubectl apply -f web-deploy.yml
+
+The "kubectl delete" command deletes objects. You can give it an object type and name, or you can give it a manifest file. If you 
+give  it an object type and name, it will delete that object. If you give it a YAML manifest file, it will delete everything defined 
+in the file. See the following examples.
+
+--> kubectl delete pod web-fe
+pod "web-fe" deleted
+
+--> kubectl delete -f web-deploy.yml
+deployment.apps "kcna-deploy" deleted
+
+"kubectl api-resources" command displays a list of all resources you can deploy on your cluster. It’s important that your version of 
+kubectl is no more than one minor version older or newer than your Kubernetes API server. For example, if you’re running Kubernetes 1.23,
+you can use kubectl version 1.22 or 1.24.
