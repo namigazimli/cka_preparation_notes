@@ -1,0 +1,47 @@
+To generate certificates there are different tools available such as EASYRSA, OPENSSL, or CFSSL, etc or many others.
+In this lecture we will use openssl tool to generate the certificates. We will start the CA certificates. First, we
+create a private key using the openssl command.
+
+--> openssl genrsa -out ca.key 2048
+
+Then we use the "openssl request" command along with the key, which is created, to generate a certificate signing
+request. The certificate signing request is like a certificate with all of your details, but with no signature.
+In the certificate signing request, we specify the name of the component the certificate is for in the common name or
+CN field. In this case, since we are creating a certificate for the Kubernetes CA, we name it "KUBERNETES-CA".
+
+--> openssl req -new -key ca.key -subj "/CN=KUBERNETES-CA" -out ca.csr
+
+Finally, we sign the certificate using the "openssl x509" command and by specifying the certificate signing request we
+generated in the previous command. Since this is for the CA itself, it is self-signed by the CA using its own private 
+key that it generated in the first step. Going forward for all other certificates, we will use this key, a key pair to
+sign them. The CA now has its private key and root certificate file.
+
+--> openssl x509 -req -in ca.csr -signkey ca.key -out ca.crt
+
+Lets now look at generating the client certificates. We start with the admin user. We follow the same process where we 
+create a private key for the admin user using the openssl command. We then generate a CSR and that is where we specify 
+the name of the admin user, which is kube-admin. A quick note about the name. It doesn't really have to be kube-admin.
+It could be anything. But remember, this is the name that kubectl client authenticates with and when you run the kubectl
+command. So, in the audit logs and elsewhere this is the name that you will see. So provide a relevant name in this field.
+Finally generate a signed certificate using the "openssl x509" command. But this time you specify the CA certificate and
+the CA key. You're signing your certificate with the CA key pair that makes this a valid certificate within your cluster.
+
+--> openssl genrsa -out admin.key 2048
+--> openssl req -new -key admin.key -subj "/CN=kube-admin" -out admin.csr
+--> openssl x509 -req -in admin.csr -CA ca.crt -CAkey ca.key -out admin.crt
+
+If you look at it, this whole process of generating a key and a certificate pair is similar to creating a user account for
+a new user. The certificate is the validated user ID and the key is like the password. It's just that it's much more secure
+than a simple username and password. So this is for the admin user. How do you differenciate this user from any other users?
+The user account needs to be identified as an admin user and not just another basic user. You do that by adding the group
+details for the user in the certificate. In this case, a group named system:masters exist on Kubernetes with administrative
+privileges. It's important to note that you must mention this information in your certificate signing request. You can do
+this by adding group details with the O= parameter while generating a certificate signing request.
+
+--> openssl req -new -key admin.key -subj "/CN=kube-admin/O=system:masters" -out admin.csr
+
+Once it's signed we now have our certificate for the admin user with admin privileges. We follow the same process to generate
+client certificates for all other components that access the Kube-API server.
+
+The Kube-Scheduler is a system component part of the Kubernetes control plane, so its name must be prefixed with the keyword
+system.

@@ -1,0 +1,61 @@
+Three types of certificates: server certificates configured on those servers, root certificate configured on the
+CA (Certificate Authority) servers and then client certificates configured on client. And a quick note on naming
+convention before we go forward.
+Usually certificates with public keys are named crt or pem extension (*.crt and *.pem), so that's server.crt or 
+server.pem for server certificates and client.crt or client.pam for client certificates. Private keys are usually
+with extension key or -key in the file names. For example, server.key or server-key.pem. So just remember private
+keys have the word "key" in them usually, either as an extension or in the name of the certificate. And one that
+doesn't have the word "key" in them is usually a public key or certificate.
+
+The Kubernetes cluster consists of a set of master and worker nodes. All communication between these nodes need to
+be secure and must be encrypted. All interactions between all services and their clients need to be secure. 
+Communication between all the components within the Kubernetes cluster also need to be secured. The 2 primary 
+requirements are to have all the various services within the cluster to use server certificates and all clients to
+use client certificates to verify they are who they say that are. 
+
+The API server exposes and HTTP as service that other components as well as external users use to manage the
+Kubernetes cluster. So it is a server and it requires certificates to secure all communication with its clients. So
+we generate a certificate and keep here. We call it "apiserver.crt" and "apiserver.key". We will try to stick to 
+this naming convention going forward. Anything with a ".crt" extension is the certificate and ".key" extension is the
+private key. The certificate names could be different in different Kubernetes setups. Depending on who and how the
+cluster was set up. So these names may be different in yours. 
+
+Another server in the cluster is the ETCD server. The ETCD server stores all information about the cluster. So it 
+requires a pair of certificate and key for itself. We will call it "etcdserver.crt" and "etcdserver.key". 
+
+The other server component in the cluster is on the worker nodes. There are the kubelet services that also expose an
+HTTP API endpoint that the kube-apiserver talks to. To interact with the worker nodes, again that requires a certificate
+and keeper. We call it "kubelet.crt" and "kubelet.key". 
+
+Those are really the server components in the Kubernetes cluster. Let's now look at the client components. Who are the
+clients who access these services? 
+
+The clients who access the API server are us - the administrators through kubectl or RestAPI. The admin user requires a 
+certificate and keeper to authenticate to the kube-apiserver. We will call it  "admin.crt" and "admin.key". 
+
+The scheduler talks to the kube-apiserver to look for pods that require scheduling and then get the API server to schedule 
+the pods on the right worker nodes. The Scheduler is the client that accesses the Kube-API server. As far as the Kube-API 
+server is concerned, this scheduler  is just another client like the admin user. So the Scheduler needs to validate its 
+identity using a client TLS certificate. So, it needs its own pair of certificate and keys. We will call it "scheduler.cert" 
+and "scheduler.key". 
+
+The Kube-Controller-Manager is another client that accesses the Kube API server, so it also requires a certificate for authentication 
+to the Kube-API server. So we create a certificate pair for it. 
+
+The last client component is the Kube-Proxy. The Kube-Proxy requires a client certificate to authenticate to the Kube-API server.
+So, it requires its own pair of certificate and keys. We will call them "kube-proxy.crt" and "kube-proxy.key". 
+The servers communicate amongst them as well. For example, the Kube-API server communicates with the ETCD server. In fact, of all the 
+components, the Kube-API server is the only server that talks to the ETCD server. So as far as the ETCD server is concerned, 
+the Kube-API server is a client, so it needs to authenticate. The Kube-API server can use the same keys that it used earlier
+for serving its own API service, the "apiserver.crt" and "apiserver.key" files or you can generate a new pair of certificates 
+specifically for the Kube-API server to authenticate to the ETCD server. The Kube-API server also talks to the kubelet server
+on each of the individual nodes. That's how it monitors the worker nodes. For this, again, it can use the original certificates 
+or generate new ones specifically for this purpose.
+
+So that's too many certificates. Let's try and group them. There are a set of client certificates, mostly used by clients to connect
+to the Kube-API server, and there are a set of server side certificates used by the Kube-API server, ETCD server and kubelet to
+authenticate their clients. We will now see how to generate these certificates. We need a Certificate Authority (CA) to sign all of
+these certificates. Kubernetes requires you to have at least one Certificate Authority for your cluster. In fact, you can have more
+than one. One for all the components in the cluster, and another one specifically for ETCD. In that case, the ETCD server's 
+certificates and the ETCD server's client certificates, which in this case is the apiserver-client certificate will be all signed
+by the ETCD server CA. 
