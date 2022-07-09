@@ -44,4 +44,82 @@ Once it's signed we now have our certificate for the admin user with admin privi
 client certificates for all other components that access the Kube-API server.
 
 The Kube-Scheduler is a system component part of the Kubernetes control plane, so its name must be prefixed with the keyword
-system.
+system. The same with Kube-Controller-Manager. It is again a system component, so its name must be prefixed with the keyword
+system. 
+And finally, kube-proxy. So far, we have created CA certificates, then all of the client certificates, including the admin
+user, scheduler, controller-manager and kube-proxy. We will follow the same procedure to create the remaining three client
+certificates for API servers and kubelets. When we create the server certificates for them, so we will set them aside for now.
+Now, what do you do with these certificates? Take the admin certificate, for instance, to manage the cluster you can use this
+certificate instead of a username and password in a RestAPI call. You make to the kube-apiserver. You specify the key, the
+certificate and the CA certificate as options. That's one simple way. 
+
+--> curl https://kube-apiserver:6443/api/v1/pods --key admin.key --cert admin.crt --cacert ca.crt
+
+The other way is to move all of these parameters into a configuration file called kube-config.yaml. Within that, specify the 
+API server endpoint details, the certificates to use, etc. That is what most of the Kubernetes clients use.
+
+In Kubernetes for these various components to verify each other, they all need a copy of the CA root certificate. So, whenever
+you configure a server or a client with certificates, you will need to specify the CA root certificate as well. Let's look at
+the server side certificates now. Let's start with the ETCD server. We follow the same procedure as before to generate a 
+certificate for ETCD. We will name it ETCD-SERVER. ETCD server can be deployed as a cluster across multiple servers as in a 
+high availability environment. In that case, to secure communication between the different members in the cluster, we must 
+generate additional peer certificates. Once the certificates are generated, specify them while starting the ETCD server. 
+There are key and cert file options where you specify the ETCD server keys. There are other options available for specifying
+the peer certificates. And finally, it requires the CA root certificate to verify that the clients connecting to the ETCD 
+server are valid.
+
+Let's talk about the kube-apiserver now. We generate a certificate for the API server like before. But the API server is the
+most popular of all components within the cluster. Everyone talks to the kube-apiserver, every operation goes through the
+kube-apiserver. Anything moves within the cluster, the API server knows about it. You need information, you talk to the API
+server and so it goes by many names and aliases within the cluster. Its real name is kube-apiserver, but some call it Kubernetes.
+Because for a lot of people who don't really know what goes under hood of Kubernetes, the kube-apiserver is Kubernetes. Only
+then those referring to the kube-apiserver by these names will be able to establish a valid connection. So, we used the same set
+of commands as earlier to generate a key, in the certificate signing request you specify the name kube-apiserver. 
+
+--> openssl genrsa -out apiserver.key 2048
+--> openssl req -new -key apiserver.key -subj "/CN=kube-apiserver" -out apiserver.csr
+
+But how do you specify all the alternate names? For that, you must create an openssl config file. Create an "openssl.cnf" file
+and specify the alternate names in the alt_names section of the file. Include all the DNS names the API server goes by. As well
+as the IP address pass this config file as an option while generating the certificate signing request.
+
+-------------------------------------------------
+openssl.cnf                                     |
+-------------------------------------------------
+[req]                                           |
+req_extensions = v3_req				|
+distinguished_name = req_distinguished_name	|
+[ v3_req ]					|
+basicConstraints = CA:FALSE			|
+keyUsage = nonRepudiation,			|
+subjectAltName = @alt_names			|
+[alt_names]					|
+DNS.1 = kubernetes				|
+DNS.2 = kubernetes.default			|
+DNS.3 = kubernetes.default.svc			|
+DNS.4 = kubernetes.default.svc.cluster.local	|
+IP.1 = xx.xx.xx.xx				|
+IP.2 = xx.xx.xx.xx				|
+-------------------------------------------------
+
+--> openssl req -new -key apiserver.key -subj "/CN=kube-apiserver" -out apiserver.csr -config openssl.cnf
+
+Finally, sign the certificate using the certificate and key. You then have the kube-apiserver certificate.
+
+--> openssl x509 -req -in apiserver.csr -CA ca.crt -CAkey ca.key -out apiserver.crt
+
+Remember to consider the API client certificates that are used by the API server while communicating as a client to the ETCD and
+kubelet servers. The location of these certificates are passed in to the kube-apiserver's executable or service configuration file.
+
+Next comes the kubelet server. The kubelet server is an HTTPS API server that runs on each node responsible for managing the node. 
+That's who the API server talks to, to monitor the node, as well as send information regarding what pods to schedule on this node.
+As such, you need a key-certificate pair for each node in the cluster. Now what do you name these certificates? Are they all going
+to be named kubelets? No, they will be named after their nodes (node01, node02, ...). Once the certificates are created, use them
+the kubelet-config.yaml file. We also talked about a set of client certificates that will be used by the kubelet to communicate 
+with the kube-apiserver. These are used by the kubelet to authenticate into the kube-apiserver. They need to be generated as well.
+What do you name these certificates? The API server needs to know which node is authenticated and give it the right set of permissions.
+So it requires the nodes to have the right names in the right formats. Since the nodes are system components like kube-scheduler and
+the controller-manager, the format starts with the "system" keyword followed by node and the node name (system:node:nodename). And
+how would the API server give it the right set of permissions? We specified a group name for the admin user, so the admin user gets
+administrative privileges. Similarly, the nodes must be added to a group named "system nodes". Once the certificates are generated,
+they go into the kube-config files. 

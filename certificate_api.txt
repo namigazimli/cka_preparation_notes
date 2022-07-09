@@ -1,0 +1,53 @@
+What is the CA server and where is it located in the Kubernetes setup? The CA is really just a pair of key and
+certificate files we have generated. Whoever gains access to these pair of files can sign any certificate for the
+Kubernetes environment. They can create as many users as they want with whatever privileges they want. So these
+files need to be protected and stored in a safe environment. So we place them on a server that is fully secure. 
+Now that server becomes your CA server, the certificate key file is safely stored in that server and only on that
+server. Every time you want to sign a certificate, you can only do it by logging in to that server. As of now, we
+have the certificates placed on the Kubernetes master node itself, so the master node is also RCA server. The 
+kubeadm tool does the same thing. It creates a CA pair of files and stores that on the master node itself. So far
+we have been signing request manually, but as and when the users increase and your team grows, you need a better automated way to manage 
+certificates, signing requests as well as to rotate certificates when they expire. Kubernetes has a built-in Certificates API that can do this   for you. With the Certificates API you now send a certificate signing request directly to Kubernetes through an API call. This time when the     administrator receives a certificate signing requests instead of logging on to the master node and signing the certificate by himself, he createsa Kubernetes API object called CertificateSigningRequest. Once the object is created, all certificate signing requests can be seen by 
+administrators of the cluster. The request can be reviewed and approved easily using kubectl commands. This certificate can then be extracted andshared with the user. Let's see how it is done.
+
+A user first creates a key, then generate certificate signing request using the key with her name on it, then sends the request to the           administrator.
+
+--> openssl genrsa -out namig.key 2048
+--> openssl req -new -key namig.key -subj "/CN=namig" -out namig.csr
+
+The administrator takes the key and creates a CertificateSigningRequest object. The CertificateSigningRequest object is created like any other   Kubernetes object, using a manifest file with the usual fields. Under the spec section specify the groups the user should be part of and list theusages of the account as a list of strings. The request field is where you specify the certificate signing request sent by the user, but you do  not specify it as plain text. Instead, it must be encoded using the base64 command.
+
+--> cat namig.csr | base64 | tr -d "\n"
+
+Then move the encoded text into the request field and then submit the request.
+-------------------------------------------------------------------------------------------------------------------------------------------------
+jane-csr.yaml					
+-------------------------------------------------------------------------------------------------------------------------------------------------
+apiVersion: certificates.k8s.io/v1beta1
+kind: CertificateSigningRequest
+metadata:
+  name: jane
+spec:
+  groups:
+  - system: authenticated
+  usages:
+  - digital signature
+  - key encipherment
+  - server auth
+  request:
+      LS0tLS1CRUdJTiBDRVJUSUZJQ0FURSBSRVFVRVNULS0tLS0KTUlJQ1ZUQ0NBVDBDQVFBd0VERU9NQXdHQTFVRUF3d0ZibUZ0YVdjd2dnRWlNQTBHQ1NxR1NJYjNEUUVCQVFVQQpBNEl      CRHdBd2dnRUtBb0lCQVFDYUphc3F0azFsam1zR1hTWVBsQ1pqeDdEc2ZnQVU3bEs4TTMvNm1RUk84TVFuCi9TU3BYZHRBcmRQYWlwVERxazlVY0d6cER0NzkrWFBSR3Jyb25FY0huej      hLdi9acjdyUGEvMjFzVHpXYU9LQ0oKY1dGSitBemE3Z0FUNkFJV0FQbXhoQVVDa1BPSHZaWjRMcjdVNzNlcWlmZXVybjdZbXo5dnRUenVqaEtZVllxawpnN3RTUW1Vb1V0QjM3NStya      3hxL0hvRWJGWnY0Y0NoTTlaamJFcEpJRVFJd3hFclNSbmlZbTlqNTR4UmcrV2dECnVVdGErbU1BOFBQcnlsL2VGc28xcVRFQWJQbk94SGl2RjZkdE4vckxLdk11bmJuOWdMQ2NwK1M5      QTM4Vmo1VkcKbmZOeGZzdDh0aXFFRmtiQnRKa09LQk5iYkFCS21FT3M5SyszTFd0M0FnTUJBQUdnQURBTkJna3Foa2lHOXcwQgpBUXNGQUFPQ0FRRUFJVFd5d0NMeUtGTmRvSHZtTVp      4UDE5UGtKYldQa0JEUVBKeHJuZWNFeXpWV0tnbEhBWTQyCktPdStOQnNibittd3RNeWdKbjFMZUNoNnpmcVg2N2Iyc0NxRHp6WEg3VSthMDFXSkc0K0x1MnB6N0ZaN0dOUG4KMEJFYk      lmWU13ZmQzRTVKTDlab1pSamhhRE52SHdlQ0F3MU1qeDJwdkJYWkRZdExVSEZxbi8ybGU2cGlZdDNlZApRZnllT252WFhPRXowRDk0STJvWXBhbXQxM1RST0pDdllxRENrY05ETGc5V      mR0QWlucDVHUUgvVHZKSDRLdi9VCjJrdUVmcittaENEOWdjblV5UlhvNWVEeTJUN29KUXkyZ0krUlRjV3lycEI0ZjdtWjROVEJqWmJGWFcvNDBBQTIKOU91UEd6dHVRSXJHQU8rOXA4      cUlzMTEvVmJ6c09FU3VVdz09Ci0tLS0tRU5EIENFUlRJRklD
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
+Once the object is created, all certificate signing requests can be seen by administrators by running "kubectl get csr" command. Identify the newrequest and approve the request by running the "kubectl certificate approve namig" command. Kubernetes signs the certificate using the CA key 
+pairs and generates a certificate for the user. This certificate can then be extracted and shared with the user. View the certificate by viewing
+it in a YAML format.
+
+--> kubectl get csr namig -o yaml
+
+The generated certificate is part of the output. But as before, it is in a base64 encoded format. To decode it, take the text and use the base64
+--decode command. This gives the certificate in a plaintext format. This can then be shared with the end user. 
+
+All the certificate related operations are carried out by the controller-manager. If you look closely at the controller-manager, you will see
+that it has controllers in it called as CSR-APPROVING, CSR-SIGNING, etc. That are responsible for carring out these specific tasks. We know that
+if anyone has to sign certificates, they need the server's root certificate and private key. The controller-manager service configuration file
+has 2 options where you can specify this (--cluster-signing-cert-file and --cluster-signing-key-file).
