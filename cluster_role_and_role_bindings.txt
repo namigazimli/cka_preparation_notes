@@ -1,0 +1,49 @@
+Can you group and isolate nodes within a namespace? Like can you say node01 is part of the dev namespace. No, those are cluster-wide or cluster  scoped resources. They cannot be associated to any particular namespace. So, the resources are categorized as either namespaced or cluster scopedThe cluster scoped resources are those where you don't specify a namespace when you create them, like nodes, persistent volumes, persistent
+clusterroles and clusterrolebindings that we're going to look at. To see a full list of namespaced and non-namespaced resources, run the 
+"kubectl api-resources" command with the --namespaced option set.
+
+--> kubectl api-resources --namespaced=true
+--> kubectl api-resources --namespaced=false
+
+How do we authorize users to cluster-wide resources like nodes or persistent volumes? That's where you use clusterroles and clusterrolebindings. Clusterroles are just like roles, except they are for a cluster scoped resources. For example, a cluster-admin role can be created to provide a  cluster administrator permissions to view, create or delete nodes in a cluster. Similarly, if storage-admin role can be created to authorize a 
+storage admin to create persistent volumes and claims. Create a clusterrole definition file with the kind "ClusterRole" and specify the rules.
+
+-------------------------------------------------
+cluster-admin-role.yaml				|
+-------------------------------------------------
+apiVersion: rbac.authorization.k8s.io/v1	|
+kind: ClusterRole				|
+metadata:					|
+  name: cluster-administrator			|
+rules:						|
+- apiGroups: [""]				|
+  resources: ["nodes"]				|
+  verbs: ["list", "get", "create", "delete"]	|
+-------------------------------------------------
+
+--> kubectl create -f cluster-admin-role.yaml
+
+The next step is to link the user to that clusterrole. For this, we create another object called "clusterrolebinding". The rolebinding object 
+links the user to the role. We will name it cluster-admin-role-binding. The kind is "ClusterRoleBinding". Under "subjects" we specify the user 
+details, the "roleRef" section is where we provide the details of the clusterrole we created.
+
+---------------------------------------------------------
+cluster-admin-role-binding.yaml				|
+---------------------------------------------------------
+apiVersion: rbac.authorization.k8s.io/v1		|
+kind: ClusterRoleBinding				|
+metadata:						|
+  name: cluster-admin-role-binding			|
+subjects:						|
+- kind: User						|
+  name: cluster-admin					|
+  apiGroup: rbac.authorization.k8s.io			|
+roleRef:						|
+  kind: ClusterRole					|
+  name: cluster-administrator				|
+  apiGroup: rbac.authorization.k8s.io			|
+---------------------------------------------------------
+
+--> kubectl create -f cluster-admin-role-binding.yaml
+
+You can create a clusterrole for namespace resources as well. When you do that the user will have access to these resources across all namespacesWith clusterroles when you authorize a user to access the pods, the user gets access to all pods across the cluster. Kubernetes creates a number of clusterroles by default when the cluster first set up.

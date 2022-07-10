@@ -1,0 +1,18 @@
+Whatever operations we have done so far with the cluster, we have been interacting with the API server one way or the other. Either through the
+kubectl utility or directly. Say we want to check the version, we can access the API server at the master nodes address followed by the port 6443by default and the API version (curl https://kube-master:6443/version). It returns the version. Similarly to get the list of pods, you would 
+access the url api/v1/pods. Our focus in this lecture is about these API paths: the /version and the /api. The Kubernetes API is grouped into 
+multiple such groups based on their purposes. Such as one for /apis, one for /healthz, one for /metrics and /logs etc. The /version API is for 
+viewing the version of the cluster. The /metrics and /healthz APIs are used to monitor the health of the cluster. The /logs are used for 
+integrating with third-party logging applications. We will focus on the API is responsible for the cluster of functionality. These APIs are 
+categorized into two: the core group (/api) and the named (/apis) group. The core group (/api) is where all core functionality exists. Such as   namespaces, pods, replication-controllers, events, endpoints, nodes, bindings, persistent volumes, persistent volume claims, configmaps, secrets,services etc. The named (/apis) group APIs are more organized and going forward all the newer features are going to be made available to these   named groups. It has groups under it for apps (/apps), extensions (/extensions), networking (/networking.k8s.io), storage (/storage.k8s.io),     authentication (/authentication.k8s.io), authorization (/certificates.k8s.io) etc. Within /apps you have deployments, replicasets, statefulsets. Within /networking.k8s.io you have network policies, /certificates.k8s.io have these certificatessigningrequests. So the ones at the top are API Groups and the ones at the bottom are resources in those groups. Each resource in this has a set of actions associated with them. 
+
+If you were to access the API directly through curl as "curl http://localhost:6443 -k", then you will not be allowed access except for certain 
+APIs like version, as you have not specified any authentication mechanisms. So you have to authenticate to the API using your certificate files  by passing them in the command line. An alternate option is to start a "kubectl proxy" client. The "kubectl proxy" command launches a proxy 
+service locally on port 8001 and uses credentials and certificates from your kubeconfig file to access the cluster. That way you don't have to   specify those in the curl command. Now you can access the kubectl proxy service at port 8001 and the proxy will use the credentials from 	  kubeconfig file to forward your request to the kube-apiserver. This will list all available APIs at root. 
+
+kube proxy != kubectl proxy
+
+Kube proxy is used to enable connectivity between pods and services across different nodes in the cluster. Whereas the kubectl proxy is an HTTP  proxy service created by kubectl utility to access the kube-apiserver.
+
+Recap, all resources in Kubernetes are grouped into different API groups. At the top level you have core api group and named api group. Under thenamed api group you have one for each section. Under this API group you have the different resources and each resource has a set of associated 
+actions known as verbs.

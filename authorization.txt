@@ -1,0 +1,33 @@
+Why do you need authorization in your cluster? As an administrator of the cluster we were able to perform all sorts operations in it, such as 
+viewing various objects like pods, nodes and deployments, creating or deleting objects such as adding or deleting pods or even nodes in the 	
+cluster. As an admin, we are able to perform any operation. But soon we will have others accessing the cluster as well, such as the other 
+administrators, developers, testers or other applications like monitoring applications or continuous delivery applications like Jenkins, etc.
+So we will be creating accounts for them to access the cluster by creating usernames and passwords or tokens or signed certificates or service   accounts. But we don't want all of them to have the same level access as us. We don't want the developers to have access to modify our cluster   configuration, like adding or deleting nodes or the storage or networking configurations. We can allow them to view, but not modify. But they 
+could have access to deploying applications. The same goes with service accounts, we only want to provide the external application, the minimum  level of access to perform its required operations. When we share our cluster between different organizations or teams by logically partitioning it using namespaces, we want to restrict access to the users to their namespaces alone. That is what authorization can help you within the 
+cluster. There are different authorization mechanisms supported by Kubernetes, such as node authorization, attribute based authorization, role 
+based authorization and webhook. We know that the kube-apiserver is accessed by users like us for management purposes as well as kubelets or 
+nodes within the cluster for management purposes within the cluster. The kubelet accesses the API server to read information about services, and points, nodes and pods. The kubelet also reports to the API server with information about the node such as its status. These requests are handledby a special authorizer known as the Node Authorizer. Any request coming from a user with the name system:node and part of the system nodes groupis authorized by the Node Authorizer and are granted these privileges. The privilege is required for kubelet. So that's access within the cluster
+
+Let's talk about external access to the API. For instance, a user attribute based authorization (ABAC) is where you associate a user or a group 
+of users with a set of permissions. In this case, we say the dev-user can view, create and delete pods. You do this by creating a policy file 
+with a set of policies defined in a JSON format:
+
+--> {"kind": "Policy", "spec": {"user": "dev-user", "namespace": "*", "resource": "pods", "apiGroup": "*" }}
+
+You pass this file into the API server. Similarly, we create a policy definition file for each user or group in this file. Every time, you need  to add or make a change in the security, you must edit this policy file manually and restart the kube-apiserver. As such, the ABAC configurationsare difficult to manage. 
+
+We will look at role-based access controls (RBAC) next. RBACs make this much easier. With RBACs, instead of directly associating a user or a 
+group with a set of permissions, we define a rule. In this case for developers we create a role with the set of permissions required for devs.
+Then we associate all the developers to that role. Similarly, create a role for security users with the right set of permissions required for 
+them, then associate the user to that role. whenever a change needs to be made to the users access, we simply modify the role and it reflects on all developers immediately. RBACs provide a more standard approach to managing access within the Kubernetes cluster. 
+
+What if you want to outsource all the authorization mechanisms? Say you want to manage an authorization externally and not through the built-in  mechanisms that we just discussed. For instance, Open Policy Agent is a third-party tool that helps with admission, control and authorization.   You can have Kubernetes make an API call to the Open Policy Agent with the information about the user and his access requirements and have the
+Open Policy Agent decide if the user should be permitted or not. Based on that response, the user is granted access. 
+
+There are 2 more modes in addition to what we just saw AlwaysAllow and AlwaysDeny. As the name states AlwaysAllow allows the all requests withoutperforming any authorization checks. AlwaysDeny denies all requests. Where do you configure these modes? Which of them active by default? Can youhave more than one at a time? How does authorization work if you do have multiple ones configured? The modes are set using the --authorization-mode option on the kube-apiserver. If you don't specify this option, it is set to AlwaysAllow by default. You may provide a comma separated list ofmultiple modes that you wish to use (--authorization-mode=Node,RBAC,Webhook). When you have multiple modes configured, your request is authorizedusing each one in the order it is specified. For example, when a user sends a request, it's firstly handled by the Node Authorizer. The Node 
+Authorizer handles only node requests. So it denies the request. Whenever a module denies a request, it is forwarded to the next one in the chain
+
+User ---> Node --> RBAC --> Webhook
+
+So every time a module denies a request, it goes to the next one in the chain. And as soon as module approves the request, no more checks are 
+done and the user is granted permission. 
