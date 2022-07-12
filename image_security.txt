@@ -1,0 +1,54 @@
+We deployed a number of different kinds of pods, hosting different kinds of applications, like web apps, and databases and Redis cache, etc. Let us start with pod definition file, for instance.
+
+---------------------------------
+nginx-pod.yaml			|
+---------------------------------
+apiVersion: v1			|
+kind: Pod			|
+metadata:			|
+  name: nginx-pod		|
+spec:				|
+  containers:			|
+    - name: nginx		|
+      image: nginx		|
+---------------------------------
+
+Here we have used the nginx image to deploy an nginx container. Let's take a closer look at this image name. The name is nginx. But what is this image and where is this image pulled from? This name follows Docker image naming convention. Nginx here is the image or the repository name. Whenyou say nginx, it's actually "library/nginx". The first part stands for the user or the account name. So if don't provide the user or account
+name, it assumes that to be library. Library is the name of the default account where Docker official images are stored. These images promote
+best practices and are maintained by a dedicated team who are responsible for reviewing and publishing these official images. Now, if you were tocreate your own account and create your own repositories or images under it, then you would use a similar pattern. So instead of library, it'd beyour name or your company's name. 
+
+Where are these images stored and pulled from? Since we have not specified the location where these images are to be pulled from, it is assumed 
+to be Docker's default registry, DockerHub, the DNS name for which is "docker.io". The registry is where all the images are stored. Whenever you create a new image or update an image, you push it to the registry and every time anyone deploys this application, it is pulled from the registryThere are many other popular registries as well. Google's registry is at "gcr.io", where a lot of Kubernetes related images are stored, like the ones used for performing end to end tests on the cluster. These are all publicly accessible images that anyone can download and access. When you have applications built in-house that shouldn't be made available to the public. Hosting an internal private registry may be a good solution. 
+Many cloud service providers, such as AWS, Azure or GCP, provide a private registry by default. On any of these solutions, be it on DockerHub or Google's registry or your internal private registry. You may choose to make a repository private. So that, it can be accessed using a set of 
+credentials. From Docker's perspective to run a container using a private image, you first login to your private registry using the "docker login" command. 
+
+--> docker login private-registry.io
+
+Once successful, run the application using the image from the private registry. 
+
+--> docker run private-registry.io/apps/internal-app
+
+Going back to our pod definition file, to use an image from our private registry, we replace the image name with the full path to the one in the private registry. But how do we implement the authentication? How does Kubernetes get the credentials to access the private registry? Within K8s,we know that the images are pulled and run by the Docker runtime on the worker nodes. How do you pass the credentials to the Docker runtimes on 
+the worker nodes? For that, we first create a Secret object with the credentials in it. The Secret is of type Docker registry and we name it 
+"regcred". Docker registry is a built-in secret type that was built for storing Docker credentials. We then specify the registry server name, theusername to access the registry, the password and the email address of the user.
+
+--> kubectl create secret docker-registry regcred \
+    --docker-server=private-registry.io --docker-username=registry-user  --docker-password=registry-password --docker-email=registry-user@org.com
+
+We then specify the secret inside our pod definition file under the "imagePullSecrets" section. When the pod is created, Kubernetes or kubelets
+on the worker nodes uses the credentials from the secret to pull images. 
+
+---------------------------------------------------------
+nginx-pod.yaml                 				|
+---------------------------------------------------------
+apiVersion: v1                  			|
+kind: Pod                       			|
+metadata:                       			|
+  name: nginx-pod               			|
+spec:                           			|
+  containers:                   			|
+    - name: nginx               			|
+      image: private-registry.io/apps/internal-app	|      
+  imagePullSecrets:					|
+  - name: regcred				        |
+---------------------------------------------------------

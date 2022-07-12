@@ -1,0 +1,25 @@
+When you run the docker container you have the option to define a set of security standards such as the ID of user used to run the container, theLinux capabilities that can be added or removed from the container, etc. These can be configured in Kubernetes as well. In Kubernetes, containersare encapsulated in PODs. You may choose to configure the security settings at a container level or at a pod level. If you configure it at a pod level, the settings will carry over to all the containers within the pod. If you configure it at both - the pod and the container, the settings
+on the container will override the settings on the pod. Let's start with a pod definition file. This pod runs an ubuntu image with the sleep
+command. To configure security context on the container, add a field called "securityContext" under the specs section of the pod used to 
+"runAsUser" a user option to set the userID for the pod. To set the same configuration on the container level, move the whole section under the
+container specification. To add capabilities use the "capabilities" option and specify a list of capabilities to add to the pod. 
+
+-----------------------------------------		-------------------------------------------------
+pod-definition.yaml			|		| pod-definition-v2.yaml			|
+-----------------------------------------		-------------------------------------------------
+apiVersion: v1				|		|apiVersion: v1					|
+kind: Pod				|		|kind: Pod					|
+metadata:				|		|metadata:					|
+  name: web-app				|		|  name: web-app				|
+spec:					|		|spec:						|
+  securityContext:			|		|  containers:					|
+    runAsUser: 1000			|		|    - name: ubuntu				|
+  containers:				|		|      image: ubuntu				|
+    - name: ubuntu			|		|      command: ["sleep","3600"]		|
+      image: ubuntu			|		|      securityContext:				|
+      command: ["sleep","3600"]		|		|        runAsUser: 1000			|
+-----------------------------------------		|	 capabilities:				|
+							|	    add: ["MAC_ADMIN"]			|
+							-------------------------------------------------
+
+Note: Capabilities are only supported at the container level and not at the POD level.

@@ -1,0 +1,51 @@
+One of the pre-requisite for networking in Kubernetes, is whatever solution you implement, the pods should be able to communicate with each otherwithout having to configure any additional settings like routes. For example, in this network solution, all pods are on the virtual private 
+network that spans across the nodes in the Kubernetes cluster. And they can all by default reach each other using the IPs or pod names or serviceconfigured for that purpose. Kubernetes is configured by default with an "All Allow" rule that allows traffic from any pod to any other pod or
+services. 
+
+		-----------				----------
+		|  Web	  |				|  API   |
+		|  Pod	  |-----------------------------|  Pod	 |
+		-----------				----------
+		     |					     |
+		     |					     |
+		     |		     --------		     |
+		     |		     |  DB  |		     |
+		      ---------------|  Pod |-----------------
+				     --------
+What if we don't want the front-end web server to able to communicate with the database server directly. That is where you would implement a
+Network Policy to allow traffic to the db server only from the api server. A Network Policy is another object in the Kubernetes namespace, just 
+like Pods, ReplicaSets or Services. You link a network policy to one or more pods. You can define rules within the network policy. In this case, only allow Ingress traffic from the API pod on port 3306. Once this policy is created, it blocks all other traffic to the DB pod and only allows traffic that matches the specified rule. This is only applicable to the pod on which the network policy is applied. 
+
+How do you apply or link a network policy to a pod? We use the same technique that was used before to link ReplicaSets or Services to pods. We
+label the pod and use the same labels on the pod selector field in the network policy. And then we build our rule. Under policy types specify
+whether the rule is to allow ingress or egress traffic or both. In our case we only want to allow ingress traffic to the DB pod. So, we add 
+Ingress. Next, we specify the ingress rule, that allows traffic from the API pod. And you specify the API pod using labels and selectors. And 
+finally, the port to allow traffic on, which is 3306.
+
+-----------------------------------------
+network_policy_definition.yaml		|
+-----------------------------------------
+apiVersion: networking.k8s.io/v1	|
+kind: NetworkPolicy			|
+metadata:				|
+  name: db-policy			|
+spec:					|
+  podSelector:				|
+    matchLabels:			|
+      role: db				|
+  policyTypes:				|
+  - Ingress				|
+  ingress:				|
+  - from:				|
+    - podSelector:			|
+        matchLabels:			|
+          name: api-pod			|
+    ports: 				|
+    - protocol: TCP			|
+      port: 3306			|
+-----------------------------------------
+
+--> kubectl create -f network_policy_definition.yaml
+
+Network Policies are enforced by the network solution implemented on the Kubernetes cluster. Not all network solutions support network policies. A few of them that are supported are Kube-router, Calico, Romana, Weave-net. If you used Flannel as the networking solution, it doesn't support 
+network policies. 
