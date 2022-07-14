@@ -1,0 +1,30 @@
+What if we wish to persist the container data? For example, if we were working with a database and we would like to preserve the data created by the container, we could add a persistent 
+volume to the container. To do this, first, create a volume using the "docker volume create" command. So when I run the "docker volume create data_volume" command, it creates a folder 
+called "data_volume" under the /var/lib/docker/volumes directory. Then when I run the Docker container using the "docker run" command, I could mount this volume inside the Docker container read-write layer using the -v option:
+
+--> docker create volume data_volume
+--> docker run -v data_volume:/var/lib/mysql mysql
+
+This will create a new container and mount the data_volume we created into /var/lib/mysql folder inside the container. All data written by the database is, in fact, stored on the volume 
+created on the Docker host. Even if the container is destroyed, the data is still active. What if you didn't run the "docker volume create" command to create the volume before the "docker
+run" command? For example, if you run the "docker run" command to create a new instance of mysql container with the volume "data_volume2", which I have not created yet, Docker will 
+automatically create a volume named "data_volume2" and mount it to the container. You should be able to see all these volumes if you lists the contents of the /var/lib/docker/volumes folderThis is called volume mounting as we are mounting a volume created by Docker under the /var/lib/docker/volumes folder. 
+
+--> docker run -v data_volume2:/var/lib/mysql mysql 
+
+But what if we had our data already at another location? For example, let's say we have some external storage on the Docker host at /data and we would like to store database data on that 
+volume and not in the default /var/lib/docker/volumes folder. In that case, we would run a container using the command "docker run -v", but in this case, we will provide the complete path 
+to the folder we would like to mount:
+
+--> docker run -v /data/mysql:/var/lib/mysql mysql 
+
+So, it will create a container and mount the folder to the container. This is called bind mounting. So, there are two types of mounts: a volume mounting and a bind mounting. 
+Volume mount mounts a volume from the volumes directory and bind mounts mounts a directory from any location on the Docker host. Using a -v option is an old style. The new way is to use
+--mount option. The --mount is the preferred way as it is more verbose, so you have to specify each parameter in a key=value format. For example, the previous command can be written like:
+
+--> docker run --mount type=bind,source=/data/mysql,target=/var/lib/mysql mysql
+
+The type in this case is bind, the source is the location on my host and target is the location on my container. So who is responsible for doing all of these operations: maintaining the
+layered architecture, creating a writable layer, moving files across layers to enable copy and write, etc? It's the storage drivers. Docker uses storage drivers to enable layered 
+architecture. Some of the common storage drivers are AUFS, ZFS, BTRFS, Device Mapper, Overlay and Overlay2. The selection of storage driver depends on the underlying OS being used. For
+example, with Ubuntu, the default storage driver is AUFS, whereas the storage driver is not available on other operating systems like Fedora or CentOS. In that case, Device Mapper may be a better option. Docker will choose the best storage driver available automatically based on the OS. The different storage drivers also provide different performance and stability characteristics. So you may want to choose one that fits the needs of your application and your organization.
