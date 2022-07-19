@@ -1,0 +1,18 @@
+If the volume gets provisioned automatically when the application requires it, and that's where storage classes come in. With storage classes, you can define a provisioner such as Google storage that can automatically provision storage on Google Cloud and attach that to pods when a claim is made. That's called dynamic provisioning of volumes. You do that by creating a storage class object with the apiVersion set to storage.k8s.io/v1, specify a name and use provisioner as kubernetes.io/gce-pd. So going back to our original state where we have a pod using a PVC for its storage and the PVC bound to a PV. We now have a storage class, so we no longer need the PV definition because the PV and any associated storage is going to be created automatically when the storage class is created. For the PVC to use the storage class we defined, we specify the storage class name in the PVC definition.
+
+-----------------------------------------				-----------------------------------------
+storage-class.yaml			|				| pvc-definition.yaml			|
+-----------------------------------------				-----------------------------------------
+apiVersion: storage.k8s.io/v1		|				|apiVersion: v1				|
+kind: StorageClass			|				|kind: PersistentVolumeClaim		|
+metadata:				|				|metadata:				|
+  name: google-storage			|				|  name: myclaim			|
+provisioner: kubernetes.io/gce-pd	|				|spec:					|
+-----------------------------------------				|  accessModes:				|
+									|	- ReadWriteOnce			|
+									|  storageClassName: google-storage	|
+									|  resources:				|
+									|	requests:			|
+									|	  storage: 500Mi		|
+									-----------------------------------------
+That's how the PVC knows which storage class to use. Next time PVC is created, the storage class associated with it, uses the defined provisioner to provision a new disk with the required size on GCP and then creates a PV and then binds the PVC to that volume. So remember that it still creates a PV. It's just that you don't have to manually create PV anymore. It's created automatically by the storage class. We used the GCE provisioner to create a volume on GCP. There are many other provisioners as well, such as AWS EBS, Azure File, Azure Disk, CephFS, Portworks, ScaleIO and so on. With each of these provisioners, you can pass in additional parameters such as the type of disk to provision, replication type etc. These parameters are very specific to the provisioner that you're using for Google Persistent Disk. You can specify the type which could be standard or SSD. You can specify the replication mode which could be none or regional-pd. 

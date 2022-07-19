@@ -1,0 +1,22 @@
+When we created volumes in the previous section we configured volumes within the pod-definition file. So every configuration information required to configure storage for the volume goes within the pod-definition file. When you have a large environment with a lot of users deploying a lot
+of PODs. The users would have to configure storage every time for each POD. Whatever storage solution is used, the users who deploy the PODs would have to configure that on all pod-definition files in his environment. Every time it changes to be made, the user would have to make them on all of his PODs. Instead you would like to manage storage more centrally. You would like it to be configured in a way that an administrator can create a large pool of storage and then have users carve out pieces from it as required. That is where persistent volumes can help us. A persistent volume is a cluster-wide pool of storage volumes configured by an administrator to be used by users deploying applications on the cluster. The users can now select storage from this pool using persistent volume claims. (persistent volumes like PVs from LVM, persistent volume claims like LVs from LVM structure) Let's now create a persistent volume. We start the base template and update the apiVersion, set the kind to PersistentVolume and name it pv-vol1. Under the specs section specify the accessModes. Access mode defines how a volume should be mounted on the hosts whether in a read-only mode or read-write mode etc. The supported values are ReadOnlyMany, ReadWriteOnce, or ReadWriteMany. Next is the capacity specify the amount of storage to be reserved for this persistent volume which is set to 1GB here. Next comes the volume type. We will start with hostPath option that uses storage from the nodes local directory. Remember, this option is not to be used in a production environment. 
+
+-------------------------------------------------
+persistent-volume-definition.yaml		|
+-------------------------------------------------
+apiVersion: v1					|
+kind: PersistentVolume				|
+metadata:					|
+  name: pv-vol1					|
+spec:						|
+  accessModes:					|
+       - ReadWriteOnce				|
+  capacity:					|
+       storage: 1Gi				|
+  hostPath:					|
+       path: /tmp/data				|
+-------------------------------------------------
+
+--> kubectl create -f persistent-volume-definition.yaml
+
+To list the created volume run the "kubectl get persistentvolume" command. Replace the hostPath option with one of the supported storage solutions like AWS EBS etc. 

@@ -1,0 +1,20 @@
+We will try to create a PersistentVolumeClaim to make the storage available to a node. Persistent Volumes and Persistent Volume Claims are two separate objects in Kubernetes namespace. An administrator creates a set of Persistent Volumes and a user creates Persistent Volume Claims to use the storage. Once the Persistent Volume Claims are created, Kubernetes binds the Persistent Volumes to Claims based on the request and properties set on the volume. Every Persistent Volume Claim is bound to a single Persistent Volume. During the binding process Kubernetes tries to find a Persistent Volume that has sufficient capacity as requested by the Claim. And any other request properties such as Access Modes, Volume Modes, Storage Class etc. However if there are multiple possible matches for a single claim and you would like to specifically use a particular volume you could still use labels and selectors to bind to the right volumes. Finally, note that a smaller claim may get bound to a larger volume if all the other criteria matches and there are no better options. There is a one to one relationship between claims and volumes. So no other claims can utilize the remaining capacity in the volume. If there are no volumes available the persistent volume claim will remain in a pending state until newer volumes are made available to the cluster. Once newer volumes are available the claim would automatically be bound to the newly available volume. Let's now create a persistent volume claim. We start with a blank template, apiVersion to v1 and kind to PersistentVolumeClaim, we will name it myclaim. Under spec section set the accessModes to ReadWriteOnce. And set resources to request a storage of 500MiBs. 
+
+---------------------------------
+pvc-definition.yaml		|
+---------------------------------
+apiVersion: v1			|
+kind: PersistentVolumeClaim	|
+metadata:			|
+  name: myclaim			|
+spec:				|
+  accessModes:			|
+     - ReadWriteOnce		|
+  resources:			|
+     requests:			|
+       storage: 500Mi		|
+---------------------------------
+
+--> kubectl create -f pvc-definition.yaml
+
+To view the created claim, run the "kubectl get persistentvolumeclaim" command. When the claim is created, Kubernetes looks at the volume created previously. The Access Modes match, the capacity requested is 500MiB, but the volume is configured with 1Gb of storage. Since there are no other volumes available, the persistent volume claim is bound to persistent volume. To delete a PVC run the "kubectl delete persistentvolumeclaim" command. But what happens to the underlying persistent volume when the PVC is deleted. You can choose what is to happen to the volume. By default it is set to retain (persistentVolumeReclaimPolicy: Retain) meaning the persistent volume will remain until it is manually deleted by the administrator. It is not available for reuse by any other claims or it can be deleted automatically (persistentVolumeReclaimPolicy: Delete). This way as soon as the claim is deleted the volume will be deleted as well. Thus freeing up the storage on the end storage device or a third option is to recycle (persistentVolumeReclaimPolicy: Recycle). In this case the data in the data-volume will be scrubbed before making it available to other claims. 
