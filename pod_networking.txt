@@ -1,0 +1,51 @@
+Kubernetes expects every Pod to get its own unique IP address and that every Pod should be able to reach every other Pod within the same node using that IP address. And every Pod should be able to reach every other Pod on the other nodes using the same IP address. It doesn't care what IP address that is and what range or subnet it belongs to. As long as you can implement a solution that takes care of automatically assigning IP addresses and establish connectivity between the Pods in a node as well as on different nodes without having to configure any NAT rules. How do you implement a model that solves these requirements? There are many networking solutions available out there that does this, but we have already learned about networking concepts, routing, IP address management, namespaces and CNI. Let's try to use that knowledge to solve this problem by ourselves. First, this will help in understanding how other solutions work.
+
+--> ip link add v-net-0 type bridge
+--> ip link set dev v-net-0 up
+--> ip addr add 192.168.15.5/24 dev v-net-0
+--> ip link add veth-red type veth peer name veth-red-br
+--> ip link set veth-red netns red
+--> ip -n red addr add 192.168.15.1 dev veth-red
+--> ip -n red link set veth-red up
+--> ip link set veth-red-br master v-net-0
+--> ip netns exec blue ip route add 192.168.1.0/24 via 192.168.15.5
+--> iptables -t nat -A POSTROUTING -s 192.168.15.0/24 -j MASQUERADE
+
+The nodes are part of an external network and has IP addresses in the 192.168.1.0 series. Node01 is assigned 192.168.1.11, Node02 is 192.168.1.12 and Node03 is 192.168.1.13. Next step when containers are created, Kubernetes creates network namespaces for them. To enable communication between them we attach these namespaces to a network, but what network? Bridge networks can be created within nodes to attach namespaces. So we create a bridge network on each node and then bring them up.
+
+--> ip link add v-net-0 type bridge
+--> ip link set dev v-net-0 up
+
+It's time to assign an IP address to the bridge interfaces or networks. But what IP address? We decide that each network will be on its own subnet. Choose any private address range and set the IP address for the bridge interface.
+
+--> ip addr add 10.244.1.1/24 dev v-net-0 (Node01)
+--> ip addr add 10.244.2.1/24 dev v-net-0 (Node02)
+--> ip addr add 10.244.3.1/24 dev v-net-0 (Node03)
+
+The remaining steps are to be performed for each container and every time a new container is created. So we write a script for it. It's just a file that has all commands we will be using, and we can run this multiple times for each container going forward. To attach a container to the network we need a pipe or a virtual network cable. We create that using the "ip link add" command. We then add one end to the container and another end to the bridge using the "ip link set" command. We then assign IP address using the "ip addr add" command and add a route to the default gateway. What IP do we add? We either manage that ourselves or store that information in some kind of database. For now, we will assume it is 10.244.1.2 which is a free IP in the subnet. Finally, we bring up the interface, we then run the same script, this time for the second container with its information and gets the container connected to the network. The two containers can now communicate with each other. We copy this script to the other nodes and run the script on them to assign IP address and connect those containers to their own internal networks.
+
+-----------------------------------------
+net-script.sh				|
+-----------------------------------------
+# Create veth pair			|
+ip link add ...				|
+					|
+# Attach veth pair			|
+ip link set ...				|
+ip link set ...				|
+					|
+# Assign IP Address			|
+ip -n <namespace> addr add ...		|
+ip -n <namespace> route add ...		|
+					|
+# Bring up interface			|
+ip -n <namespace> link set ...		|
+-----------------------------------------
+
+The next part is to enable them to reach other Pods on other nodes. For example, the Pod 10.244.1.2 on Node01 wants to ping Pod 10.244.2.2 on Node02. Add a route to Node01's routing table to route traffic to 10.244.2.2 where the second node's IP at 192.168.1.12. 
+
+node01$ --> ip route add 10.244.2.2 via 192.168.1.12
+
+Once the route is added, the 10.244.1.2 Pod is able to ping across. Similarly, we configure route on all host to all other hosts with information regarding the respective networks within them. Instead of having to configure routes on each server, a better solution is to do that on a router if you have one in your network and point all hosts to use that as the default gateway. That way you can easily manage routes to all networks in the routing table on the router. 
+
+CNI tells Kubernetes that this is how you should call a script as soon as you create a container. And CNI tells us this is how you script should look like. 

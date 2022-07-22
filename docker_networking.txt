@@ -1,0 +1,19 @@
+Let's start with a single Docker Host. A server with Docker installed on it. It has an ethernet interface at eth0 that connects to the local network with the IP address 192.168.1.10. When you run a container you have different networking options to choose from. First, let's see the none
+network. With the none network, the Docker container is not attached to any network. The container cannot reach the outside world and no one from the outside world can reach the container. 
+
+--> docker run --network none nginx
+
+If you run multiple containers they are all created without being part of any network and cannot talk to each other or to the outside world. Next is the host network. With the host network the container is attached to the host's network. There is no network isolation between the host and the container. If you deploy a web application listening on port 80 in the container, then the web application is available on port 80 on the host without having to do any additional port mapping. If you try to run another instance of the same container that listens on the same port it won't work as they share the host networking and two processes cannot listen on the same port at the same time. 
+
+--> docker run --network host nginx
+
+The third networking option is the bridge. In this case, an internal private network is created which the Docker host and container attach to. The network has an address 172.17.0.0 by default and each device connecting to this network get their own internal private network address on this network.
+
+--> docker run nginx
+
+This is the network that we are most interested in. So we will take a deeper look at how exactly Docker creates and manages this network. When Docker is installed on the host it creates an internal private network called "bridge" by default. You can see this when you run the "docker network ls" command. But on the host network is created by the name docker0. You can see this in the output of the "ip link" command. Docker internally uses a technique similar to what we saw on the namespaces by running "ip link add" command with the type set to bridge.
+
+--> ip link add docker0 type bridge
+
+So remember, the name "bridge" in the "docker network ls" output refers to the name "docker0" on the host. Also note that the interface or network is currently down. The interface docker0 on the host is assigned an IP 172.17.0.1. You can see this in the output of the "ip addr" command.
+Whenever a container is created, Docker creates a network namespace for it, just like how we created network namespaces. Note that there is a minor hack to be done to get the "ip netns" command to list the namespaces created by the Docker. How does Docker attach the container or its network namespace to the bridge network? For the reminder, the container and network namespace mean the same thing. 
