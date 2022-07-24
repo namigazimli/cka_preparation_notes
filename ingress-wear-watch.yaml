@@ -1,0 +1,65 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-wear-watch
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /wear
+        backend:
+          serviceName: wear-service
+          servicePort: 80
+      - path: /watch
+        backend:
+          serviceName: watch-service
+          servicePort: 80
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-wear-watch
+spec:
+  rules:
+  - host: wear.my-online-store.com
+      paths:
+      - backend:
+          serviceName: wear-service
+          servicePort: 80
+  - host: watch.my-online-store.com
+      paths:
+      - backend:
+          serviceName: watch-service
+          servicePort: 80
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-wear-watch
+spec:
+  rules:
+  - http: 
+      paths:
+      - path: /wear
+        pathType: Prefix
+        backend: 
+          service: 
+            name: wear-service
+            port: 
+              number: 80
+      - path: /watch
+        pathType: Prefix
+        backend:
+          service:
+            name: watch-service
+            port:
+              number: 80
+
+Now, in k8s version 1.20+ we can create an Ingress resource from the imperative way like this:
+
+Format - kubectl create ingress <ingress-name> --rule="host/path=service:port"
+Example --> kubectl create ingress ingress-test --rule="wear.my-online-store.com/wear*=wear-service:80"
