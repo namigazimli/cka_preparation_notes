@@ -1,7 +1,6 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  creationTimestamp: null
   labels:
     app: red
   name: red
@@ -10,10 +9,8 @@ spec:
   selector:
     matchLabels:
       app: red
-  strategy: {}
   template:
     metadata:
-      creationTimestamp: null
       labels:
         app: red
     spec:
@@ -29,5 +26,3 @@ spec:
       containers:
       - image: nginx
         name: nginx
-        resources: {}
-status: {}

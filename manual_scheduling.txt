@@ -1,8 +1,4 @@
-We can manually assign pods to node. Without a scheduler the easiest way to schedule a pod
-is to simply set the "nodeName" field to the name of the node in your pod specification 
-while creating the POD. The pod then gets assigned to the specified node. We can only specify
-the node name at creation time. What if the pod is already created and you want to assign the
-pod to a node? Kubernetes won't allow you to modify the "nodeName" property of a pod.
+We can manually assign pods to node. Without a scheduler the easiest way to schedule a pod is to simply set the "nodeName" field to the name of the node in your pod specification while creating the POD. The pod then gets assigned to the specified node. We can only specify the node name at creation time. What if the pod is already created and you want to assign the pod to a node? Kubernetes won't allow you to modify the "nodeName" property of a pod.
 
 -------------------------------
 pod-definition.yaml           |
@@ -23,10 +19,7 @@ spec:                         |
 -------------------------------
 
 
-So another way to assign a node to an existing pod is to create a binding object and send a post
-request to the pod binding API. In the binding object you specify a target node with the name of 
-the node. Then send a post request to the pods binding API with the data set to the binding object
-in a JSON format. So you must convert the YAML file into its equivalent JSON format.
+So another way to assign a node to an existing pod is to create a binding object and send a post request to the pod binding API. In the binding object you specify a target node with the name of the node. Then send a post request to the pods binding API with the data set to the binding object in a JSON format. So you must convert the YAML file into its equivalent JSON format.
 
 -------------------------------
 pod-binding-definition.yaml   |
@@ -42,5 +35,3 @@ target:                       |
 -------------------------------
 # curl --header "Content-Type:application/json" --request POST --data '{"apiVersion":"v1", "kind": "Binding" ... }' \
 ->http://$SERVER/api/v1/namespaces/default/pods/$PODNAME/binding/
-
-

@@ -1,3 +1,1 @@
-Taints&tolerations and node affinity can be used together to completely dedicate nodes for specific pods. 
-We first use taints&tolerations to prevent other pods from being placed on our nodes, and then we use node
-affinity to prevent our pods from being placed on other nodes.
+Taints&tolerations and node affinity can be used together to completely dedicate nodes for specific pods. We first use taints&tolerations to prevent other pods from being placed on our nodes, and then we use node affinity to prevent our pods from being placed on other nodes.

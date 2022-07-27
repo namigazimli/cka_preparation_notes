@@ -24,7 +24,4 @@ spec:                       |
       cpu: 2                |
 -----------------------------
 
-Remember that the limits and requests are set for each container within the pod. So what happens when a pod tries exceed resources
-beyond its specified limit? In case of CPU, Kubernetes throttles the CPU. So that it does not go beyond the specified limit. 
-A container cannot use more CPU resources than its limit. However, this is not the case with the memory. A container can use more 
-memory resources than its limit. So if a pod tries to consume more memory than its limit constantly, the pod will be terminated.
+Remember that the limits and requests are set for each container within the pod. So what happens when a pod tries exceed resources beyond its specified limit? In case of CPU, Kubernetes throttles the CPU. So that it does not go beyond the specified limit. A container cannot use more CPU resources than its limit. However, this is not the case with the memory. A container can use more memory resources than its limit. So if a pod tries to consume more memory than its limit constantly, the pod will be terminated.

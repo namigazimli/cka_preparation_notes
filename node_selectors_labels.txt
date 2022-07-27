@@ -1,8 +1,4 @@
-Suppose that we have 3 different nodes in the cluster. One of them has larger resources than another ones. However, in the current
-default setup, any pods can go to any nodes. To solve this, we can set a limitation on the pods, so that they only run on particular
-nodes. There are two ways to do this. The first is using NodeSelectors which is the simple and easier way. For this we look at the 
-pod definition file we created earlier. This file has a simple definition to create a pod with a data processing image. To limit this
-pod to run on the larger node we add a new property called "nodeSelector" to the spec section and specify the size as large.
+Suppose that we have 3 different nodes in the cluster. One of them has larger resources than another ones. However, in the current default setup, any pods can go to any nodes. To solve this, we can set a limitation on the pods, so that they only run on particular nodes. There are two ways to do this. The first is using NodeSelectors which is the simple and easier way. For this we look at the pod definition file we created earlier. This file has a simple definition to create a pod with a data processing image. To limit this pod to run on the larger node we add a new property called "nodeSelector" to the spec section and specify the size as large.
 
 ------------------------------
 pod-definition.yaml          |
@@ -20,10 +16,7 @@ spec:                        |
                              |
 ------------------------------
 
-Where the "size: Large" come from and how does Kubernetes know which is the large node. The key-value pair of size and large are in fact
-labels assigned to the nodes. The Scheduler uses these labels to match and identify the right node to place the pods on. To use labels in
-a known selector like this, you must have first labelled your nodes prior to creating this pod. To label a node use the command kubectl
-label.
+Where the "size: Large" come from and how does Kubernetes know which is the large node. The key-value pair of size and large are in fact labels assigned to the nodes. The Scheduler uses these labels to match and identify the right node to place the pods on. To use labels in a known selector like this, you must have first labelled your nodes prior to creating this pod. To label a node use the command "kubectl label".
 
 --> kubectl label nodes <node-name> <label-key>=<label-value>
 In this case we have to use following command:
