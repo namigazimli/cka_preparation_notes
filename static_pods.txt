@@ -1,25 +1,5 @@
-The kubelet can manage a node independently. On the node we have the kubelet installed. And, of course,
-we have Docker as to run containers. There is no Kubernetes cluster. So there are no kube-api-server or
-anything like that. The one thing the kubelet knows to do is create PODs. But we don't have an API server
-here to provide POD details. By now we know that to create the pod you need the details of the pod in a
-pod definition file. But how do you provide a pod definition file to the kubelet without a kube-api-server?
-You can configure the kubelet to read the pod definition files from a directory on the server designated to
-store information about pods (/etc/kubernetes/manifests). The kubelet periodically checks this directory for
-files, reads these files and creates pods on the host. Not only does it create the pod, it can ensure that 
-the pod stays alive. If the application crashes, the kubelet attempts to restart it. If you make a change to
-any of the file within this directory, the kubelet recreates the pod for those changes to take effect. If you
-remove file from this directory the pod is deleted automatically. So, these PODs that are created by the 
-kubelet on its own without the intervention from the API server or rest of the Kubernetes cluster components
-are known as Static PODs.
-Remember, you can only create PODs this way. You cannot create replicasets or deployments or services by placing
-a definition file in the designated directory. They are all concepts part of the whole Kubernetes architecture, 
-that requires other control plane components like replication and deployment controllers etc. The kubelet works 
-at only a POD level and can only understand PODs. Which is why it is able to create static pods this way. So,
-what is designated folder and how do you configure it?
-It could be any directory on the host and the location of that directory is passed in to the kubelet as option
-while running the service. The option is named pod-manifest-path (--pod-manifest-path). There is also another way 
-to configure this. Instead of specifying the option directly in the kubelet.service file, you could provide a 
-path to another config file using the --config option, and define the directory path as static pod path in that file.
+The kubelet can manage a node independently. On the node we have the kubelet installed. And, of course, we have Docker as to run containers. There is no Kubernetes cluster. So there are no kube-api-server or anything like that. The one thing the kubelet knows to do is create PODs. But we don't have an API server here to provide POD details. By now we know that to create the pod you need the details of the pod in a pod definition file. But how do you provide a pod definition file to the kubelet without a kube-api-server? You can configure the kubelet to read the pod definition files from a directory on the server designated to store information about pods (/etc/kubernetes/manifests). The kubelet periodically checks this directory for files, reads these files and creates pods on the host. Not only does it create the pod, it can ensure that the pod stays alive. If the application crashes, the kubelet attempts to restart it. If you make a change to any of the file within this directory, the kubelet recreates the pod for those changes to take effect. If you remove file from this directory the pod is deleted automatically. So, these PODs that are created by the kubelet on its own without the intervention from the API server or rest of the Kubernetes cluster components are known as Static PODs.
+Remember, you can only create PODs this way. You cannot create replicasets or deployments or services by placing a definition file in the designated directory. They are all concepts part of the whole Kubernetes architecture, that requires other control plane components like replication and deployment controllers etc. The kubelet works at only a POD level and can only understand PODs. Which is why it is able to create static pods this way. So, what is designated folder and how do you configure it? It could be any directory on the host and the location of that directory is passed in to the kubelet as option while running the service. The option is named pod-manifest-path (--pod-manifest-path). There is also another way to configure this. Instead of specifying the option directly in the kubelet.service file, you could provide a path to another config file using the --config option, and define the directory path as static pod path in that file.
 
 -----------------------------------------
 kubeconfig.yaml                         |
@@ -27,26 +7,7 @@ kubeconfig.yaml                         |
 staticPodPath: /etc/kubernets/manifests |
 -----------------------------------------
 
-Once static pods are created, you can view them by running the docker ps command. So why not the kubelet command as 
-we have been doing so far? Remember, we don't have the rest of the Kubernetes cluster. So kubectl utility works with
-the kube-apiserver. Since we don't have the kube-apiserver now, no kubectl utility. Which is why we're using the 
-docker command. So then how does it work when the node is part of the cluster? When there is an API server requesting
-the kubelet to create Pods. Can the kubelet create both kinds of Pods at the same time?
+Once static pods are created, you can view them by running the docker ps command. So why not the kubelet command as we have been doing so far? Remember, we don't have the rest of the Kubernetes cluster. So kubectl utility works with the kube-apiserver. Since we don't have the kube-apiserver now, no kubectl utility. Which is why we're using the docker command. So then how does it work when the node is part of the cluster? When there is an API server requesting the kubelet to create Pods. Can the kubelet create both kinds of Pods at the same time?
 
-Well, the way the kubelet works is it can take in requests for creating parts from different inputs. The first is 
-through the POD definition files from the static pods folder, as we just saw. The second is through an HTTP API 
-endpoint. And that is how the kube-apiserver provides input to kubelet. The kubelet can create both kinds of PODs - 
-the static pods and the ones from the api-server - at the same time. In that case is the API server aware of the
-static pods created by the kubelet? Yes, it is. If you run the kubectl get pods command on the master node, the 
-static pods will be listed as any other pod. Well, how is that happening? When the kubelet creates a static pod, if 
-it is part of the cluster, it also creates a mirror object in the kube-apiserver. What you see from the kube-apiserver
-is just a read only mirror of the pod? You can view details about the pod, but you cannot edit or delete it like as the
-usual pods. You can only delete them by modifying the files from the node's manifest folder. Note that the name of the
-pod is automatically appended with the node name. So then, why would you want to use static PODs? Since static pods 
-are not dependent on the Kubernetes control plane, you can use static pods to deploy the control plane components itself
-as pods on a node. Start by installing kubelet on the master node. Then create pod definitin files that uses Docker images
-of the various control plane components such as the api server, controller and etcd etc. Place the definition files in the
-designated manifests folder. And the kubelet takes care of deploying the control plane components themselves as PODs on
-the cluster. This way you don't have to download the binaries, configure services or worry about so the service is crashing.
-If any of these services were to crash since it's a static pod it will automatically be restarted by the kubelet. That's up
-the kubeadm tool sets up a Kubernetes cluster. 
+Well, the way the kubelet works is it can take in requests for creating parts from different inputs. The first is through the POD definition files from the static pods folder, as we just saw. The second is through an HTTP API endpoint. And that is how the kube-apiserver provides input to kubelet. The kubelet can create both kinds of PODs - the static pods and the ones from the api-server - at the same time. In that case is the API server aware of the static pods created by the kubelet? Yes, it is. If you run the kubectl get pods command on the master node, the static pods will be listed as any other pod. Well, how is that happening? When the kubelet creates a static pod, if it is part of the cluster, it also creates a mirror object in the kube-apiserver. What you see from the kube-apiserver is just a read only mirror of the pod? You can view details about the pod, but you cannot edit or delete it like as the usual pods. You can only delete them by modifying the files from the node's manifest folder. Note that the name of the pod is automatically appended with the node name. So then, why would you want to use static PODs? Since static pods are not dependent on the Kubernetes control plane, you can use static pods to deploy the control plane components itself as pods on a node. Start by installing kubelet on the master node. Then create pod definitin files that uses Docker images of the various control plane components such as the api server, controller and etcd etc. Place the definition files in the designated manifests folder. And the kubelet takes care of deploying the control plane components themselves as PODs on the cluster. This way you don't have to download the binaries, configure services or worry about so the service is crashing.
+If any of these services were to crash since it's a static pod it will automatically be restarted by the kubelet. That's up the kubeadm tool sets up a Kubernetes cluster. 
