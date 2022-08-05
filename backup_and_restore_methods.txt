@@ -1,89 +1,44 @@
-We know that the etcd cluster is where all cluster related information is stored, and if
-your applications are configured with persistent storage, then that is another candidate
-for backups. With respect to resources that we created in the cluster, at times we use
-the imperative way of creating an object by executing a command such as while creating a
-namespace or a secret or a configmap or at times for exposing application.
+We know that the etcd cluster is where all cluster related information is stored, and if your applications are configured with persistent storage, then that is another candidate for backups. With respect to resources that we created in the cluster, at times we use the imperative way of creating an object by executing a command such as while creating a namespace or a secret or a configmap or at times for exposing application.
 
 --> kubectl create namespace <namespace-name>
 --> kubectl create secret
 --> kubectl create configmap
 
-And at times we used the declarative approach by first creating a definition file and then
-running the "kubectl apply" command on that file. This is the preferred approach if you 
-want to save your configuration. Because now you have all the objects required for a single
-application in the form of object definition files in a single folder. This can easily be reused
-at a later time or shared with others. Of course, you must have a copy of these files saved 
-at all times. A good practice is to store these on source code repository. That way it can 
-be maintained by a team. The source code repository (GitHub) should be configured with the
-right backup solutions. With managed or public source code repositories like GitHub, you 
-don't have to worry about this. With that even when you lose your entire cluster, you can
-redeploy your application on the cluster by simply applying this configuration files on them.
-While the declarative approach is the preferred approach, it is not necessary that all of your
-team members stick to those standards. What if someone created an object the imperative way
-without documenting that information anywhere? So a better approach to backing up resource 
-configuration is to query the kube-apiserver. Query the kube-apiserver using the "kubectl" or
-by accessing the kube-apiserver directly, and save all resource configurations for all objects
-created on the cluster as a copy. For example, one of the commands that can be used in a backup
-script is to get all pods and deployments and services in all namespaces using the "kubectl" 
-utilities "get all" command and extract the output in a YAML format, then save that file.
+And at times we used the declarative approach by first creating a definition file and then running the "kubectl apply" command on that file. This is the preferred approach if you want to save your configuration. Because now you have all the objects required for a single application in the form of object definition files in a single folder. This can easily be reused at a later time or shared with others. Of course, you must have a copy of these files saved at all times. A good practice is to store these on source code repository. That way it can be maintained by a team. The source code repository (GitHub) should be configured with the right backup solutions. With managed or public source code repositories like GitHub, you don't have to worry about this. With that even when you lose your entire cluster, you can redeploy your application on the cluster by simply applying this configuration files on them. While the declarative approach is the preferred approach, it is not necessary that all of your team members stick to those standards. What if someone created an object the imperative way without documenting that information anywhere? So a better approach to backing up resource configuration is to query the kube-apiserver. Query the kube-apiserver using the "kubectl" or by accessing the kube-apiserver directly, and save all resource configurations for all objects created on the cluster as a copy. For example, one of the commands that can be used in a backup script is to get all pods and deployments and services in all namespaces using the "kubectl" utilities "get all" command and extract the output in a YAML format, then save that file.
 
 --> kubectl get all --all-namespaces -o yaml > all-deploy-services.yaml
 
-And that's just a few resource group. There are many other resource groups that must be considered.
-Of course, you don't have to develop that solutions yourself. There are tools like "ARK" or now
-called "VELERO" by the HeptIO that can do this for you. It can help in taking backups of your 
-Kubernetes cluster using the Kubernetes API.
+And that's just a few resource group. There are many other resource groups that must be considered. Of course, you don't have to develop that solutions yourself. There are tools like "ARK" or now called "VELERO" by the HeptIO that can do this for you. It can help in taking backups of your Kubernetes cluster using the Kubernetes API.
 
-Let's now to move on ETCD. The ETCD cluster stores information about the state of our cluster. So,
-information about the cluster itself, the nodes and every other resources created within the cluster
-are stored here. So instead of backing up resource as before, you may choose to backup the ETCD 
-server itself. As we have seen, the ETCD cluster is hosted on the master nodes. While configuring 
-ETCD we specified a location where all the data would be stored. The data directory (--data-dir), that
-can be configured to be backed up by your backup to. ETCD also comes with a built-in snapshot solution.
-You can take a snapshot of the ETCD database by using the "etcdctl snapshot save" command.
+Let's now to move on ETCD. The ETCD cluster stores information about the state of our cluster. So, information about the cluster itself, the nodes and every other resources created within the cluster are stored here. So instead of backing up resource as before, you may choose to backup the ETCD server itself. As we have seen, the ETCD cluster is hosted on the master nodes. While configuring ETCD we specified a location where all the data would be stored. The data directory (--data-dir), that can be configured to be backed up by your backup to. ETCD also comes with a built-in snapshot solution. You can take a snapshot of the ETCD database by using the "etcdctl snapshot save" command.
 
 --> ETCDCTL_API=3 etcdctl snapshot save snapshot.db
 
-A snapshot file is created by the name in the current directory. If you want to create it in another
-location, specify the full path. You can view the status of the backup using the "snapshot status"
-command.
+A snapshot file is created by the name in the current directory. If you want to create it in another location, specify the full path. You can view the status of the backup using the "snapshot status" command.
 
 --> ETCDCTL_API=3 etcdctl snapshot status snapshot.db
 
-To restore the cluster from this backup at a later point in time, first stop the kube-apiserver service.
-As the restore process will require you to restart the ETCD cluster and the kube-apiserver depends on it.
-Then run the "etcdctl snapshot restore" command with the path set to the path of the backup file, which is
-the snapshot.db file. When ETCD restores from a backup, it initializes a new cluster configuration and 
-configures the members of ETCD as new members to a new cluster. 
+To restore the cluster from this backup at a later point in time, first stop the kube-apiserver service. As the restore process will require you to restart the ETCD cluster and the kube-apiserver depends on it. Then run the "etcdctl snapshot restore" command with the path set to the path of the backup file, which is the snapshot.db file. When ETCD restores from a backup, it initializes a new cluster configuration and configures the members of ETCD as new members to a new cluster. 
 
 --> service kube-apiserver stop
 --> ETCDCTL_API=3 etcdctl snapshot restore snapshot.db --data-dir /var/lib/etcd-from-backup
 
-This is to prevent a new member from accidentally joining an existing cluster. On running this command, a new
-data directory (--data-dir) is created in this example. We then configure the ETCD configuration file to use
-the new data directory. Then reload the service daemon and restart etcd service. Finally, start the kube-apiserver
-service. 
+This is to prevent a new member from accidentally joining an existing cluster. On running this command, a new data directory (--data-dir) is created in this example. We then configure the ETCD configuration file to use the new data directory. Then reload the service daemon and restart etcd service. Finally, start the kube-apiserver service. 
 
 --> systemctl daemon-reload
 --> service etcd restart
 --> service kube-apiserver start
 
-Your cluster should now be back in the original state. With all the ETCD commands, remember to specify the certificate
-files for authentication. Specify the endpoint to the ETCD cluster and CA certificate, the ETCD server certificate
-and the key.
+Your cluster should now be back in the original state. With all the ETCD commands, remember to specify the certificate files for authentication. Specify the endpoint to the ETCD cluster and CA certificate, the ETCD server certificate and the key.
 
 --> ETCDCTL_API=3 etcdctl snapshot save snapshot.db --endpoints=https://127.0.0.1:2379 --cacert=/etc/etcd/ca.crt \
 >> --cert=/etc/etcd/etcd-server.crt --key=/etc/etcd/etcd-server.key
 
-etcdctl is a command line client for etcd.In all our Kubernetes Hands-on labs, the ETCD key-value database is deployed
- as a static pod on the master. The version used is v3. To make use of etcdctl for tasks such as back up and restore, 
-make sure that you set the ETCDCTL_API to 3. You can do this by exporting the variable ETCDCTL_API prior to using the 
-etcdctl client. This can be done as follows:
+etcdctl is a command line client for etcd.In all our Kubernetes Hands-on labs, the ETCD key-value database is deployed as a static pod on the master. The version used is v3. To make use of etcdctl for tasks such as back up and restore, make sure that you set the ETCDCTL_API to 3. You can do this by exporting the variable ETCDCTL_API prior to using the etcdctl client. This can be done as follows:
 
 --> export ETCDCTL_API=3
 
-To see all the options for a specific sub-command, make use of the -h or --help flag. For example, if you want to take a 
-snapshot of etcd, use:
+To see all the options for a specific sub-command, make use of the -h or --help flag. For example, if you want to take a snapshot of etcd, use:
 
 --> etcdctl snapshot save -h 
 

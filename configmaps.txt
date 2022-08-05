@@ -1,19 +1,4 @@
-When you have a lot of pod definition files, it will become difficult to
-manage the environment data stored within the query files. We can take 
-this information out of the pod definition file and manage it centrally 
-using Configuration Maps. ConfigMaps are used to pass configuration data
-in the form of the key-value pairs in Kubernetes. When a pod is created
-inject the ConfigMap into the pod. So the key-value pairs that are 
-available as environment variables for the application hosted inside the
-container in the pod. There are two phases involved in configuring ConfigMaps.
-First, create the ConfigMaps and second, inject them into the Pod. Just
-like any other Kubernetes object. There are two ways of creating a ConfigMap.
-The imperative way - without using a ConfigMap definition file and the
-declarative way by using a ConfigMap definition file. If you don't wish 
-to create a ConfigMap definition, you could simply use the "kubectl create
-configmap" command and specify the required arguments.
-With first method you can directly specify the key-value pairs in the
-command line. (Imperative way)
+When you have a lot of pod definition files, it will become difficult to manage the environment data stored within the query files. We can take this information out of the pod definition file and manage it centrally using Configuration Maps. ConfigMaps are used to pass configuration data in the form of the key-value pairs in Kubernetes. When a pod is created inject the ConfigMap into the pod. So the key-value pairs that are available as environment variables for the application hosted inside the container in the pod. There are two phases involved in configuring ConfigMaps. First, create the ConfigMaps and second, inject them into the Pod. Just like any other Kubernetes object. There are two ways of creating a ConfigMap. The imperative way - without using a ConfigMap definition file and the declarative way by using a ConfigMap definition file. If you don't wish to create a ConfigMap definition, you could simply use the "kubectl create configmap" command and specify the required arguments. With first method you can directly specify the key-value pairs in the command line. (Imperative way)
 
 --------------------
 ConfigMap          |
@@ -25,21 +10,13 @@ APP_MODE: prod     |     --from-literal=<key>=<value>
 --> kubectl create configmap app-config --from-literal=APP_COLOR=blue \
     --from-literal=APP_MODE=prod 
 
-The --from-literal option is used to specify the key-value pairs in the 
-command itself. In this example we are creating a ConfigMap by the name
-app-config, with a key-value pair of APP_COLOR=blue. If you wish to add 
-additional key-value pairs, simply specify the --from-literal options 
-multiple times. However this will get complicated when you have too many
-configuration items.
+The --from-literal option is used to specify the key-value pairs in the command itself. In this example we are creating a ConfigMap by the name app-config, with a key-value pair of APP_COLOR=blue. If you wish to add additional key-value pairs, simply specify the --from-literal options multiple times. However this will get complicated when you have too many configuration items.
 
-Another way to input configuration data is through a file. Use the --from-file
-option to specify a path to the file that contains the required data. The data
-from this file is read and stored under the name of the file.
+Another way to input configuration data is through a file. Use the --from-file option to specify a path to the file that contains the required data. The data from this file is read and stored under the name of the file.
 
 --> kubectl create configmap app-config --from-file=app_config.properties
 
-Let's now look at the declarative approach. For this we create a definition file
-just like how we did for the pod.
+Let's now look at the declarative approach. For this we create a definition file just like how we did for the pod.
 
 -----------------------------------
 configmap-definition.yml          |
@@ -55,12 +32,7 @@ data:                             |
 
 --> kubectl create -f configmap-definition.yml
 
-To view ConfigMaps, run the "kubectl get configmaps" command. This lists the newly created 
-configmap. Now that we have the ConfigMap created, let us proceed with step2 - configuring 
-it with a pod. To inject an environment variable, add a new property to the container called
-"envFrom". The "envFrom" is a list, so we can pass as many environment variables as required.
-Each item in the list corresponds to a ConfigMap item. Specify the name of the ConfigMap we
-created earlier. This is how we inject a specific ConfigMap from the ones we created before.
+To view ConfigMaps, run the "kubectl get configmaps" command. This lists the newly created configmap. Now that we have the ConfigMap created, let us proceed with step2 - configuring it with a pod. To inject an environment variable, add a new property to the container called "envFrom". The "envFrom" is a list, so we can pass as many environment variables as required. Each item in the list corresponds to a ConfigMap item. Specify the name of the ConfigMap we created earlier. This is how we inject a specific ConfigMap from the ones we created before.
 
 --------------------------------------
 pod-definition.yml                   |
@@ -82,8 +54,7 @@ spec:                                |
 
 --> kubectl create -f pod-definition.yml
 
-There are other ways to inject configuration data into pods. You can inject it as a single 
-environment variable or you can inject the whole the data as files in a volume.
+There are other ways to inject configuration data into pods. You can inject it as a single environment variable or you can inject the whole the data as files in a volume.
 
 ----------------------------
 env:                       |

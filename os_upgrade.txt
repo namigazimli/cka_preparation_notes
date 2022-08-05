@@ -1,8 +1,4 @@
-We have a cluster with a few nodes and pods serving applications. What happens when one of these nodes go down?
-Of course, the pods on them are not accessible. Depending upon how you deployed those Pods your users may be
-impacted. For example, since you have multiple replicas of the "xxx" pod, the users accessing the "xxx" application
-are not impacted as they are being served through the other "xxx" pod that's online. However, users accessing the
-"yyy" pod, are impacted as that was the only pod running the "yyy" pod.
+We have a cluster with a few nodes and pods serving applications. What happens when one of these nodes go down? Of course, the pods on them are not accessible. Depending upon how you deployed those Pods your users may be impacted. For example, since you have multiple replicas of the "xxx" pod, the users accessing the "xxx" application are not impacted as they are being served through the other "xxx" pod that's online. However, users accessing the "yyy" pod, are impacted as that was the only pod running the "yyy" pod.
 
 -----------       ------------------       ------------------
            |      |    Worker-1    |       |    Worker-2    |
@@ -16,31 +12,11 @@ are not impacted as they are being served through the other "xxx" pod that's onl
            |      |                |	   |                |
 ------------      ------------------	   ------------------
 
-What does Kubernetes do in this case? If the node came back online immediately, then the kubelet process starts and pods
-come back online. However, if the node was down for more than 5 minutes, then the pods are terminated from that node. 
-Well, Kubernetes considers them as dead. If the pods where part of a ReplicaSet then they are recreated on other nodes.
-The time it waits for a pod to come back online is known as the "pod eviction timeout" and is set on the controller 
-manager with a default value of five minutes. So, whenever a node goes offline, the master node waits for up to 5 mins 
-before considering the node dead. When the node comes back online after the pod eviction timeout, it comes up blank
-without any pod scheduled on it. Since the "xxx" pod was part of a ReplicaSet, it had a new pod created on another node.
-However, since the "yyy" pod was not part of the ReplicaSet, it's just gone. Thus if you have maintenance tasks to be 
-performed on a node,if you know that workloads running on the node have the other replicas and if it's okay that they
-go down for a short period of time, and if you're sure the node will come back online within 5 mins, you can make a quick
-upgrade and reboot. However, you don't for sure know if a node is going to be back online in 5 mins. So, there is a safer
-way to do it. You can purposefully drain the node of all the workloads. So that the workloads are moved to other nodes in
-the cluster. Well technically they are not moved. When you drain the node, the pods are gracefully terminated from the
-node that they're on, and recreated on another. The node is also cordoned or marked as unschedulable. Meaning no pods can
-be scheduled on this node until you specifically remove the restriction. Now that the pods are safe on the other nodes,
-you can reboot the first node. When it comes back online it is still unschedulable. You then need to uncordon it, so that
-pods can be scheduled on it again. Now, remember, the pods that were moved to the other nodes, don't automatically fall
-back. If any of those pods where deleted or if new pods were created in the cluster, then they would be created on this
-node. 
+What does Kubernetes do in this case? If the node came back online immediately, then the kubelet process starts and pods come back online. However, if the node was down for more than 5 minutes, then the pods are terminated from that node. Well, Kubernetes considers them as dead. If the pods where part of a ReplicaSet then they are recreated on other nodes. The time it waits for a pod to come back online is known as the "pod eviction timeout" and is set on the controller manager with a default value of five minutes. So, whenever a node goes offline, the master node waits for up to 5 mins before considering the node dead. When the node comes back online after the pod eviction timeout, it comes up blank without any pod scheduled on it. Since the "xxx" pod was part of a ReplicaSet, it had a new pod created on another node. However, since the "yyy" pod was not part of the ReplicaSet, it's just gone. Thus if you have maintenance tasks to be performed on a node, if you know that workloads running on the node have the other replicas and if it's okay that they go down for a short period of time, and if you're sure the node will come back online within 5 mins, you can make a quick upgrade and reboot. However, you don't for sure know if a node is going to be back online in 5 mins. So, there is a safer way to do it. You can purposefully drain the node of all the workloads. So that the workloads are moved to other nodes in the cluster. Well technically they are not moved. When you drain the node, the pods are gracefully terminated from the node that they're on, and recreated on another. The node is also cordoned or marked as unschedulable. Meaning no pods can be scheduled on this node until you specifically remove the restriction. Now that the pods are safe on the other nodes, you can reboot the first node. When it comes back online it is still unschedulable. You then need to uncordon it, so that pods can be scheduled on it again. Now, remember, the pods that were moved to the other nodes, don't automatically fall back. If any of those pods where deleted or if new pods were created in the cluster, then they would be created on this node. 
 
 --> kubectl drain worker-1
 --> kubectl uncordon worker-1
 
-Apart from drain and uncordon, there is also another command called "cordon". Cordon simply marks a node as unschedulable.
-Unlike drain it does not terminate or move the pods on an existing node. It simply makes sure that new pods are not scheduled
-on that node. 
+Apart from drain and uncordon, there is also another command called "cordon". Cordon simply marks a node as unschedulable. Unlike drain it does not terminate or move the pods on an existing node. It simply makes sure that new pods are not scheduled on that node. 
 
 --> kubectl cordon worker-2

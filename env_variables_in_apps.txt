@@ -1,4 +1,3 @@
-
 --> docker run -e APP_COLOR=pink simple-webapp-color
 
 --------------------------------------
@@ -19,15 +18,7 @@ spec:                                |
           value: pink                |
 --------------------------------------
 
-Given a pod definition file which uses the same image as the docker command. To set
-an environment variable, use the "env" property. "env" is an array. So, every item 
-under the "env" property starts with a dash, indicating the item in the array. Each
-item has a name and a value property. The name is the name of the environment variable
-made available with the container and the value is its value. That was a direct way
-of specifying the environment variables using a plain key-value pair format.
-However there are other ways of setting the environment variables such as using 
-ConfigMaps and Secrets. The difference in this case is that instead of specifying 
-value, we use "valueFrom", and then the specification of ConfigMap or Secret.
+Given a pod definition file which uses the same image as the docker command. To set an environment variable, use the "env" property. "env" is an array. So, every item under the "env" property starts with a dash, indicating the item in the array. Each item has a name and a value property. The name is the name of the environment variable made available with the container and the value is its value. That was a direct way of specifying the environment variables using a plain key-value pair format. However there are other ways of setting the environment variables such as using ConfigMaps and Secrets. The difference in this case is that instead of specifying value, we use "valueFrom", and then the specification of ConfigMap or Secret.
 
 ----------------------------
 env:                       |

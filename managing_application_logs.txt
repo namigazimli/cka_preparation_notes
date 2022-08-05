@@ -15,15 +15,12 @@ spec:                                  |
 
 --> kubectl create -f event-simulator.yaml
 
-Once it's the pod is running, we can view the logs using the "kubectl logs" command 
-with the pod name.
+Once it's the pod is running, we can view the logs using the "kubectl logs" command with the pod name.
 
 --> kubectl logs -f event-simulator-pod
 
-Use the -f option to stream the logs live. Now these logs are specific to the container
-running inside the pod. We know that Kubernetes Pods can have multiple containers in them.
-In this case we modify the pod definition file to include an additional container called
-image-processor.
+Use the -f option to stream the logs live. Now these logs are specific to the container running inside the pod. We know that Kubernetes Pods can have multiple containers in them.
+In this case we modify the pod definition file to include an additional container called image-processor.
 
 ----------------------------------------
 event-simulator.yaml                   |
@@ -40,10 +37,7 @@ spec:                                  |
       image: some-image-processor      |
 ----------------------------------------
 
-If we ran kubectl logs command again, which container's log would it show? If there are multiple 
-containers within a pod, you must specify the name of the container explicitly in the command.
-Otherwise it would fail asking you to specify a name. In this case we will specify the name of
-the first container "event-simulator" and that prints the relevant log messages.
+If we ran kubectl logs command again, which container's log would it show? If there are multiple containers within a pod, you must specify the name of the container explicitly in the command. Otherwise it would fail asking you to specify a name. In this case we will specify the name of the first container "event-simulator" and that prints the relevant log messages.
 
 --> kubectl logs -f event-simulator-pod event-simulator
 
