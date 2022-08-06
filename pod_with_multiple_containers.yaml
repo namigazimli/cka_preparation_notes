@@ -19,13 +19,5 @@ spec:
         mountPath: /tmp/git             <<==== Mount it here in the sidecar container
 
 
-Lines 1-9 define the pod, whereas lines 10-20 describe two containers. As with the
-previous example, both containers are nested/wrapped within the pod definition. Lines 6-8 
-define a new empty volume called “html”. As it’s part of the pod environment it’s accessible 
-to both containers. The detail isn’t important, you just need to recognise that the pod is 
-bringing features the containers don’t natively have. Lines 11-15 define the main application 
-container. It mounts the shared html volume into its local filesystem at /usr/share/nginx.
-Lines 16-20 define the sidecar container and mount the same shared html volume at /tmp/git.
-To summarise the YAML file, it describes a multi-container pod. The pod includes a runtime 
-class reference to help the scheduler and it defines a shared volume. Both containers mount 
-the shared volume and can use it to share data.
+Lines 1-9 define the pod, whereas lines 10-20 describe two containers. As with the previous example, both containers are nested/wrapped within the pod definition. Lines 6-8 define a new empty volume called “html”. As it’s part of the pod environment it’s accessible to both containers. The detail isn’t important, you just need to recognise that the pod is bringing features the containers don’t natively have. Lines 11-15 define the main application container. It mounts the shared html volume into its local filesystem at /usr/share/nginx. Lines 16-20 define the sidecar container and mount the same shared html volume at /tmp/git. To summarise the YAML file, it describes a multi-container pod. The pod includes a runtime 
+class reference to help the scheduler and it defines a shared volume. Both containers mount the shared volume and can use it to share data.

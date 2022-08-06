@@ -1,44 +1,13 @@
-Kubernetes runs a set of specialised controllers that implement most of the intelligence
-that makes Kubernetes so powerful. Each one runs as reconciliation loop that watches the
-cluster and ensures observed state is in sync with desired state. 
+Kubernetes runs a set of specialised controllers that implement most of the intelligence that makes Kubernetes so powerful. Each one runs as reconciliation loop that watches the cluster and ensures observed state is in sync with desired state. 
 
-Deployment controller. The Deployment controller implements the intelligence and features 
-required to run stateless apps on Kubernetes. For example, it can ensure 5 replicas of a 
-web service are always running. If one fails, the controller starts a new one. It also 
-implements the intelligence for zero-downtime rolling updates and more.
+Deployment controller. The Deployment controller implements the intelligence and features required to run stateless apps on Kubernetes. For example, it can ensure 5 replicas of a web service are always running. If one fails, the controller starts a new one. It also implements the intelligence for zero-downtime rolling updates and more.
 
-StatefulSet controller. The StatefulSet controller is similar to the deployment controller
-but it specialises in stateful workloads. For example, it deploys and self-heals a desired 
-number of pods just like the deployment controller does. However, it also implements things 
-like ordered startups and ordered shutdowns that might be important to stateful apps that 
-write to shared data stores.
+StatefulSet controller. The StatefulSet controller is similar to the deployment controller but it specialises in stateful workloads. For example, it deploys and self-heals a desired number of pods just like the deployment controller does. However, it also implements things like ordered startups and ordered shutdowns that might be important to stateful apps that write to shared data stores.
 
-DaemonSet controller. The DaemonSet controller ensures a single instance of a particular pod 
-is always running on every node of the cluster. A common example is logging, where it’s common 
-to need an agent running on every cluster node to collect and ship logs. The DaemonSet controller 
-will ensure an instance of the agent pod runs on every node in the cluster. This includes 
-automatically starting pods on any new nodes added to the cluster. It can also restart or replace 
-pods that fail. There are a lot more controllers, but they all operate as reconciliation loops 
-that watch the cluster and make sure observed state matches desired state.
+DaemonSet controller. The DaemonSet controller ensures a single instance of a particular pod is always running on every node of the cluster. A common example is logging, where it’s common to need an agent running on every cluster node to collect and ship logs. The DaemonSet controller will ensure an instance of the agent pod runs on every node in the cluster. This includes automatically starting pods on any new nodes added to the cluster. It can also restart or replace pods that fail. There are a lot more controllers, but they all operate as reconciliation loops that watch the cluster and make sure observed state matches desired state.
 
-Consider the following example. You have a new app that needs 5 stateless web pods running v1.3 of 
-your code. You describe this requirement in a declarative manifest file that you post to the API 
-server. This gets recorded in the cluster store as your desired state and the scheduler assigns the 
-5 pods to worker nodes. The deployment controller operates on the control plane as a background 
-reconciliation loop making sure observed state matches desired state – in this example it’s making 
-sure the 5 web pods are always running. If observed state matches desired state it just keeps watching
-the cluster. However, if a node running one of the pods fails, the deployment controller will observe 
-4 web pods and realise it doesn’t match the desired state of 5. It will fix this by instructing the 
-scheduler to start a new pod on a surviving node. This will bring observed state back into sync with 
-desired state and is an example of resiliency or selfhealing.
+Consider the following example. You have a new app that needs 5 stateless web pods running v1.3 of your code. You describe this requirement in a declarative manifest file that you post to the API server. This gets recorded in the cluster store as your desired state and the scheduler assigns the 5 pods to worker nodes. The deployment controller operates on the control plane as a background reconciliation loop making sure observed state matches desired state – in this example it’s making sure the 5 web pods are always running. If observed state matches desired state it just keeps watching the cluster. However, if a node running one of the pods fails, the deployment controller will observe 4 web pods and realise it doesn’t match the desired state of 5. It will fix this by instructing the scheduler to start a new pod on a surviving node. This will bring observed state back into sync with desired state and is an example of resiliency or selfhealing.
 
-Sticking with the same example, assume you want to update all 5 web pods from v1.3 to v1.4. You do this 
-by updating the same declarative manifest file to specify the new version and post it to the API server 
-again. This registers a new desired state of 5 web pods running v1.4. The deployment controller will 
-observe 5 web pods running v1.3 and compare that to desired state which now wants 0 pods running v1.3 
-and 5 pods running v1.4. It will respond by replacing the 5 pods running v1.3 with 5 running v1.4.
-This is an example of a rollout.
+Sticking with the same example, assume you want to update all 5 web pods from v1.3 to v1.4. You do this by updating the same declarative manifest file to specify the new version and post it to the API server again. This registers a new desired state of 5 web pods running v1.4. The deployment controller will observe 5 web pods running v1.3 and compare that to desired state which now wants 0 pods running v1.3 and 5 pods running v1.4. It will respond by replacing the 5 pods running v1.3 with 5 running v1.4. This is an example of a rollout.
 
-Jargon busting. We often say that controllers operate as “control loops”, “watch loops” or “reconciliation loops”. 
-They all mean the same thing. We also use the terms “current state”, “actual state” and “observed state” to mean the same thing.
-Finally, the process of bringing current state back into sync with desired state is called reconciliation.
+Jargon busting. We often say that controllers operate as “control loops”, “watch loops” or “reconciliation loops”. They all mean the same thing. We also use the terms “current state”, “actual state” and “observed state” to mean the same thing. Finally, the process of bringing current state back into sync with desired state is called reconciliation.

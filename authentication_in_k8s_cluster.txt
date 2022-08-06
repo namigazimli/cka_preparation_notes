@@ -1,36 +1,16 @@
-As we have seen already, the Kubernetes cluster consists of multiple nodes, physical or virtual and various
-components that work together. You have users like administrators that access the cluster to perform
-administrative tasks, the developers that access the cluster to test or deploy applications. We have end 
-users who access the applications deployed on the cluster and we have third party applications accessing the
-cluster for integration purposes. In this section, we will discuss how to secure our cluster by securing the
-communication between internal components and securing management access to the cluster through authentication
-and authorization mechanisms. In this lecture, our focus is on securing access to the Kubernetes cluster with
-authentication mechanisms. So, we talked about the different users that maybe accessing the cluster. Our focus
-is on users access to the Kubernetes cluster for administrative purposes. So, we are left with 2 types of users:
-humans, such as administrators and developers; and robots, such as other processes or services or applications
-that require access to the cluster. Kubernetes does not manage user accounts natively. It relies on an external
-source, like a file with user details or certificates or third party identity service like LDAP to manage these
-users. And so, you cannot create users in Kubernetes cluster or view the list of users like this.
+As we have seen already, the Kubernetes cluster consists of multiple nodes, physical or virtual and various components that work together. You have users like administrators that access the cluster to perform administrative tasks, the developers that access the cluster to test or deploy applications. We have end users who access the applications deployed on the cluster and we have third party applications accessing the cluster for integration purposes. In this section, we will discuss how to secure our cluster by securing the communication between internal components and securing management access to the cluster through authentication and authorization mechanisms. In this lecture, our focus is on securing access to the Kubernetes cluster with authentication mechanisms. So, we talked about the different users that maybe accessing the cluster. Our focus is on users access to the Kubernetes cluster for administrative purposes. So, we are left with 2 types of users: humans, such as administrators and developers; and robots, such as other processes or services or applications that require access to the cluster. Kubernetes does not manage user accounts natively. It relies on an external source, like a file with user details or certificates or third party identity service like LDAP to manage these users. And so, you cannot create users in Kubernetes cluster or view the list of users like this.
 
 --> kubectl create user user1	XXX
 --> kubectl list users		XXX
 
-However, in case of service accounts, Kubernetes can manage them. You can create and manage service accounts 
-using the Kubernetes API. We have a section on service accounts exclusively where we discuss and practice more
-about service accounts.
+However, in case of service accounts, Kubernetes can manage them. You can create and manage service accounts using the Kubernetes API. We have a section on service accounts exclusively where we discuss and practice more about service accounts.
 
 --> kubectl create serviceaccount sa1	
 --> kubectl get serviceaccount		
 
-For this lecture, we will focus on users in Kubernetes. All user access is managed by the kube-apiserver. Whether
-you're accessing the cluster through kubectl tool or the API directly, all of these requests go through the 
-kube-apiserver. The kube-apiserver authenticates the requests before processing it. So how does the kube-apiserver
-authenticate? There are different authentication mechanisms that can be configured. You can have a list of username
-and passwords in a static password file or usernames and tokens in a static token file or you can authenticate 
-using certificates. And another option is to connect to third party authentication protocols, like LDAP, Kerberos.
+For this lecture, we will focus on users in Kubernetes. All user access is managed by the kube-apiserver. Whether you're accessing the cluster through kubectl tool or the API directly, all of these requests go through the kube-apiserver. The kube-apiserver authenticates the requests before processing it. So how does the kube-apiserver authenticate? There are different authentication mechanisms that can be configured. You can have a list of username and passwords in a static password file or usernames and tokens in a static token file or you can authenticate using certificates. And another option is to connect to third party authentication protocols, like LDAP, Kerberos.
 
-Let's start with static password and token files as it is the easiest to understand. You can create a list of users
-and their passwords in a CSV file and use that as the source for user information. 
+Let's start with static password and token files as it is the easiest to understand. You can create a list of users and their passwords in a CSV file and use that as the source for user information. 
 
 ------------------------------
 user-details.csv             |
@@ -42,11 +22,7 @@ password123,user4,u0004      |
 password123,user5,u0005      |
 ------------------------------
 
-The file has three columns: password, username and userID. We then pass the file name as an option to the API server
-(--basic-auth-file=user-details.csv). If you setup your cluster using the kubeadm tool, then you must modify the 
-kube-apiserver pod definition file (/etc/kubernetes/manifests/kube-apiserver.yaml). The kubeadm tool will 
-automatically restart the kube-apiserver once you update this file. To authenticate using the basic credentials while
-accessing the kube-apiserver specify the user and password in a core command like this:
+The file has three columns: password, username and userID. We then pass the file name as an option to the API server (--basic-auth-file=user-details.csv). If you setup your cluster using the kubeadm tool, then you must modify the kube-apiserver pod definition file (/etc/kubernetes/manifests/kube-apiserver.yaml). The kubeadm tool will automatically restart the kube-apiserver once you update this file. To authenticate using the basic credentials while accessing the kube-apiserver specify the user and password in a core command like this:
 
 --> curl -v -k https://master-node-ip:6443/api/v1/pods -u "user1:password123"
 
@@ -62,13 +38,10 @@ password123,user4,u0004,group4      |
 password123,user5,u0005,group5      |
 -------------------------------------
 
-Similarly, instead of a static password file, you can have a static token file. Here instead of password, you specify 
-a token. Pass the token as an option --token-auth-file to the kube-apiserver. While authenticating specify the token
-as an Authorization Bearer token to your requests like this:
+Similarly, instead of a static password file, you can have a static token file. Here instead of password, you specify a token. Pass the token as an option --token-auth-file to the kube-apiserver. While authenticating specify the token as an Authorization Bearer token to your requests like this:
 
 --> curl -v -k https://master-node-ip:6443/api/v1/pods --header "Authorization: Bearer ncendjrneDUENDCUEswnjswebjn3e93"
 
 Note.
-1 - This is not a recommended authentication mechanism. This authentication mechanism stores usernames, passwords and 
-tokens in clear text in a static file, it is insecure.
+1 - This is not a recommended authentication mechanism. This authentication mechanism stores usernames, passwords and tokens in clear text in a static file, it is insecure.
 2 - If you were trying this out in a kubeadm setup, you must also consider volume mounts to passing the old file.
