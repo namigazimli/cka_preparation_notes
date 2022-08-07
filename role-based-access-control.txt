@@ -1,0 +1,47 @@
+How do we create a role? We do that by creating o role object. So we create a role definition file with the apiVersion set to rbac.authorization.k8s.io/v1 and kind set to Role. We name the role "developer" as we are creating this role for developers and then we specify rules. Each rule hasthree sections: apiGroups, resources, and verbs. For core group, you can leave the apiGroup section as blank. For any other group you specify thegroup name. The resources that we want to give developers access to our pods. The actions that they can take are list, get, create and delete. 
+Similarly to allow developers to create configmaps, we add another rule to create ConfigMap. We can add multiple rules for a single role:
+
+-------------------------------------------------
+developer-role.yaml				|
+-------------------------------------------------
+apiVersion: rbac.authorization.k8s.io/v1	|
+kind: Role					|
+metadata:					|
+  name: developer				|
+rules:						|
+- apiGroups: [""]				|
+  resources: ["pods"]				|
+  verbs: ["list", "get", "create", "delete"]	|
+						|
+- apiGroups: [""]				|
+  resources: ["ConfigMap"]			|
+  verbs: ["create"]				|
+-------------------------------------------------
+
+Create the role using the "kubectl create role" command.
+
+--> kubectl create -f developer-role.yaml
+
+The next step is to link the user to that role. For this we create another object called RoleBinding. The RoleBinding object links a user object to a role. We will name it devuser-developer-binding. The kind is RoleBinding. It has two sections: The subjects is where we specify the user 
+details; the roleRef section is where we provide the details of the role we created. Create the RoleBinding the "kubectl create" command.
+
+---------------------------------------------------------
+devuser-developer-binding.yaml				|
+---------------------------------------------------------
+apiVersion: rbac.authorization.k8s.io/v1		|
+kind: RoleBinding					|
+metadata:						|
+  name: devuser-developer-binding			|
+subjects:						|
+- kind: User						|
+  name: dev-user					|
+  apiGroup: rbac.authorization.k8s.io			|
+roleRef:						|
+  kind: Role						|
+  name: developer					|
+  apiGroup: rbac.authorization.k8s.io			|
+---------------------------------------------------------
+
+--> kubectl create -f devuser-developer-binding.yaml
+
+Also note that the roles and role bindings fall under the scope of namespaces. So here the dev-user gets access to pods and configmaps within thedefault namespace. If you want to limit the dev-user's access within a different namespace then specify 
